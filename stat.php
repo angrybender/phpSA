@@ -3,7 +3,10 @@
  *
  * @author k.vagin
  */
+include 'Utils.php';
 include 'Tokenizer.php';
+include 'Expressions.php';
+include 'Variables.php';
 include 'checkers/Conditions.php';
 
 $source = file_get_contents('stat_emxpl.php');
@@ -11,7 +14,7 @@ $tokens = Tokenizer::get_tokens($source);
 
 //print_r(get_all_ifconditions($tokens));
 
-$expression = Tokenizer::reduce_and_normalize_boolean_expression('$is_in_billing && $is_in_billing && !$is_local_blocked && !$is_billing_blocked'); // $a >> 1 - $a++ +1/($d-date($a+1)) && $this->start() || !$a
+$expression = Expressions::reduce_and_normalize_boolean_expression('$is_in_billing && $is_in_billing && !$is_local_blocked && !$is_billing_blocked'); // $a >> 1 - $a++ +1/($d-date($a+1)) && $this->start() || !$a
 if (Conditions::check_boolean_expression($expression)) {
 	echo 'Expression OK';
 }

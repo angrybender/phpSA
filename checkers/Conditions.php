@@ -25,7 +25,7 @@ class Conditions {
 	{
 		$tokens = Tokenizer::get_tokens('<?php ' . $expression, true);
 
-		$vars = Tokenizer::get_all_vars_in_expression($expression);
+		$vars = Variables::get_all_vars_in_expression($expression);
 		if (count($vars)<2) return true; // нечего проверять
 
 		$var_count = count($vars); // число разных переменных
@@ -41,8 +41,7 @@ class Conditions {
 			return true;
 		}
 
-		$expression_normal_result = // хеш значений функции
-		$variables = Tokenizer::get_all_variables($var_count); // карта входных значений
+		$variables = Utils::get_all_variables($var_count); // карта входных значений
 
 		$expression_normal_result = self::calculate_boolean($expression, $vars, $variables);
 
@@ -105,7 +104,7 @@ class Conditions {
 				}, $nest)
 			);
 
-			$expression_value_map[] = Tokenizer::calculate_boolean_expression($expression, $in_var);
+			$expression_value_map[] = Expressions::calculate_boolean_expression($expression, $in_var);
 		}
 
 		return join('', array_map(function($value) {
