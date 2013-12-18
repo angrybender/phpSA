@@ -3,11 +3,7 @@
  *
  * @author k.vagin
  */
-include 'Utils.php';
-include 'Tokenizer.php';
-include 'Expressions.php';
-include 'Variables.php';
-include 'checkers/Conditions.php';
+include 'bootstrap.php';
 
 $source = file_get_contents('stat_emxpl.php');
 $tokens = Tokenizer::get_tokens($source);
