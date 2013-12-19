@@ -1,5 +1,3 @@
 <?php
 
-if ($class->new()) {
-
-}
+unset($a);

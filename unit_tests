@@ -21,12 +21,14 @@ do
 	fi
 done
 
+php OuputFormatter.php;
+
 echo "";
 echo "";
 
 if ls | grep lock.lock > /dev/null
 then
-	echo "";
+	php ErrorOutput.php;
 else
 	cat results.txt;
 fi

@@ -27,11 +27,24 @@ class Procedures {
 		$code = null;
 		$results = array();
 
+		$func_equal_instructions = array(
+			'T_LIST',
+			'T_ISSET',
+			'T_EVAL',
+			'T_EMPTY'
+		);
+
 		foreach ($tokens as $i => $token) {
 			if (!is_array($token)) {
 				continue;
 			}
 
+			if (in_array($token[0], $func_equal_instructions)) {
+				$results[] = $token[1];
+				continue;
+			}
+
+			$is_add = false;
 			if ($token[0] == 'T_STRING'
 				&& isset($tokens[$i+1])
 				&& $tokens[$i+1] === '('
@@ -44,29 +57,27 @@ class Procedures {
 				) {
 					$is_add = false;
 				}
-
-				if ($is_add) {
-					$results[] = $token[1];
-				}
 			}
 
-			if (($token[0] == 'T_STRING' || $token[0] == 'T_VARIABLE') // ловим sub()-> или $var->
-				&& isset($tokens[$i+1])
-				&& is_array($tokens[$i+1])
-				&& ($tokens[$i-1][0] == 'T_OBJECT_OPERATOR' || $tokens[$i-1][0] == 'T_DOUBLE_COLON')
-			) {
-				$ext_ct = self::extract_full_class_method($tokens, $i);
-				if (!empty($ext_ct)) {
-					$results[] = $ext_ct;
-				}
+			$ext_ct = self::extract_full_class_method($tokens, $i);
+			if (!empty($ext_ct)) {
+				$results[] = $ext_ct;
+				$is_add = false;
+			}
+
+			if ($is_add) {
+				// тут очень хитр о - если токен подходит, но, с него экстрактор методов объектов не находит цепочку - добавляем
+				$results[] = $token[1];
 			}
 		}
 
-		return $tokens;
+		return $results;
 	}
 
 	/**
 	 * раскручивает цепочку вперед и возвращает всю конструктцию вызова метода целиком $this->getObj()::instance()
+	 * некорректно обрабатывает конструкции вида $class->sub($class->param()) (вложенный метод)
+	 *
 	 * @param array $tokens
 	 * @param int $token_position позиция, в котрой лежит первый член цепочки
 	 * @return null|string
@@ -84,6 +95,7 @@ class Procedures {
 		);
 
 		$is_open_bracket = false;
+		$is_call_operator_found = false;
 		foreach ($tokens as $i => $token) {
 			if ($is_open_bracket
 				&& $token === ')'
@@ -95,13 +107,6 @@ class Procedures {
 			) {
 				// нашли конец цепочки вызовов
 				break;
-			}
-
-			if ($i==0
-				&& is_array($token)
-				&& ($token[0] === 'T_STRING' || $token[0] === 'T_VARIABLE')
-			) {
-				$result[] = $token[1];
 			}
 
 			if ($i==0 &&
@@ -131,14 +136,31 @@ class Procedures {
 				$is_open_bracket = true;
 			}
 
+			if (is_array($token)
+				&& ($token[0] == 'T_OBJECT_OPERATOR' || $token[0] == 'T_DOUBLE_COLON')
+			) {
+				$is_call_operator_found = true;
+			}
+
 
 			$result[] = $token;
 		}
 
-		if (!$is_open_bracket) {
+		if (!$is_open_bracket || !$is_call_operator_found) {
 			return null;
 		}
 
-		return Tokenizer::tokens_to_source($result);
+
+		for ($i = count($result) - 1; $i>=0; $i--) {
+			if ($result[$i] !== '(') {
+				unset($result[$i]);
+			}
+			else {
+				unset($result[$i]);
+				break;
+			}
+		}
+
+		return Tokenizer::tokens_to_source(array_values($result));
 	}
 } 

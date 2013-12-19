@@ -1,0 +1,32 @@
+// comments
+
+if ($update_relations) {
+	if (!$this->updateRelationAttributes()) { //  || !$this->processDocumentRelations() <- там заглушка
+		$this->reject($msg, true);
+		return false;
+	}
+}
+
+if (
+	$is_dbx_message && isset($message->revision_descriptors_added[0])
+	|| !$is_dbx_message
+) {
+	// Если пришёл запрос от DBX или это пересозданное сообщение из конца очереди надо сначала проверить
+	// дошли ли изменения документа до реплики
+	if ($document = $this->checkReplicationComplete()) {
+		// всё ок, изменения пришли, индексируем документ
+		/** @noinspection PhpDeprecationInspection */
+		if (!$this->processDocument($document) || !$this->processDocumentRelations()) {
+			$this->reject($msg, true);
+			return false;
+		}
+	}
+	// else - изменения не дошли, сообщение было пересоздано в конец очереди
+}
+
+if ($is_in_billing //  Если пользователя есть у нас, и есть в биллинге и  пользователь не заблокирован - выводим "Подключен"
+	&& $is_in_billing
+	&& !$is_local_blocked
+	&& !$is_billing_blocked) {
+
+}

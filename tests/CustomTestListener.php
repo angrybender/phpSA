@@ -38,7 +38,6 @@ class CustomTestListener extends MyPHPUnit_Util_Printer implements PHPUnit_Frame
 			$this->suites = $stat['suites'];
 			$this->clear_time = $stat['clear_time'];
 		}
-
 	}
 
 	private function write_stat()
@@ -50,20 +49,12 @@ class CustomTestListener extends MyPHPUnit_Util_Printer implements PHPUnit_Frame
 		);
 
 		file_put_contents(__DIR__ . '/results.bin', serialize($stat));
-
-		$this->clear_time = round(100*$this->clear_time)/100;
-
-		file_put_contents(__DIR__ . '/results.txt',
-			"\033[01mTests:\033[0m {$this->count} / {$this->suites}" . PHP_EOL .
-			"\033[01mTime:\033[0m {$this->clear_time} s"
-		);
 	}
 
 	public function addError(PHPUnit_Framework_Test $test, Exception $e, $time)
 	{
 		$this->is_error = true;
 		echo "\033[31m", 'E', "\033[0m";
-
 	}
 
 	public function addFailure(PHPUnit_Framework_Test $test, PHPUnit_Framework_AssertionFailedError $e, $time)
@@ -121,9 +112,9 @@ class CustomTestListener extends MyPHPUnit_Util_Printer implements PHPUnit_Frame
 			echo PHP_EOL;
 		}
 
-		foreach ($this->errors as $error) {
+		/*foreach ($this->errors as $error) {
 			echo $error, PHP_EOL;
-		}
+		}*/
 
 		if (count($this->errors)>0) {
 			die();

@@ -1,0 +1,4 @@
+func1();
+func2();
+code()->item();
+(int)$val;
