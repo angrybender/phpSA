@@ -1,6 +1,5 @@
 <?php
 
-$class = new Exception();
+if ($class->new()) {
 
-$f = date('Y') || time();
-$a = $f . '10';
+}

@@ -1,0 +1,45 @@
+#!/bin/bash
+
+cd tests;
+
+if ls | grep log.txt > /dev/null
+then
+	rm log.txt
+fi
+
+LIST=`find suites/*Test.php -type f`;
+for ONE_OF_LIST in $LIST
+do
+	#run test file and out results into log file:
+	php phpunit.phar --log-tap=log.txt --printer CustomTestListener $ONE_OF_LIST;
+
+	# stop execute tests if any test failed:
+	# lock file have to create a tests runner
+	if ls | grep lock.lock > /dev/null
+	then
+		break;
+	fi
+done
+
+echo "";
+echo "";
+
+if ls | grep lock.lock > /dev/null
+then
+	echo "";
+else
+	cat results.txt;
+fi
+
+echo "";
+echo "";
+
+if ls | grep results.txt > /dev/null
+then
+	rm results.txt
+fi
+
+if ls | grep results.bin > /dev/null
+then
+	rm results.bin
+fi
