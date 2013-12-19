@@ -12,7 +12,8 @@ class DateBadOperation {
 		'time',
 		'mktime',
 		'gmmktime',
-		'strtotime'
+		'strtotime',
+		'timestamp'
 	);
 
 	private $suspicious_string_functions = array(
