@@ -55,6 +55,30 @@ class Tokenizer {
 	}
 
 	/**
+	 * возвращает токены, но давит комментарии и пустые строки + сам начальных тэг ставит
+	 * @param string $code
+	 * @return array
+	 */
+	public static function get_tokens_of_expression($code)
+	{
+		$is_remove_open_tag = false;
+		if (!is_array($code)) {
+			if (!self::is_open_tag($code)) {
+				$is_remove_open_tag = true;
+				$code = '<?php' . $code;
+			}
+		}
+
+		$result = self::get_tokens($code);
+		if ($is_remove_open_tag) {
+			unset($result[0]);
+			$result = array_values($result);
+		}
+
+		return $result;
+	}
+
+	/**
 	 * нормализирует код
 	 * @param string $source
 	 * @return string
@@ -257,4 +281,89 @@ class Tokenizer {
 		return false;
 	}
 
+	/**
+	 * грубо разбить код по строкам (по ; и { })
+	 * @param string|array $code
+	 * @return array
+	 */
+	public static function format_code_into_lines($code)
+	{
+		if (!is_array($code)) {
+			if (!Tokenizer::is_open_tag($code)) {
+				$code = '<?php ' . $code;
+			}
+
+			$tokens = Tokenizer::get_tokens($code, true);
+		}
+		else {
+			$tokens = $code;
+		}
+
+		$tokens[0] = false;
+
+		$lines = array();
+		$line = array();
+
+		foreach ($tokens as $i => $token) {
+
+			if ($token === '{' || $token === '}') {
+				$lines[] = self::tokens_to_source($line);
+				$line = array();
+			}
+
+			if ($token !== ';') {
+				$line[] = $token;
+			}
+
+			if ($token === ';' || $token === '{' || $token === '}') {
+				$lines[] = self::tokens_to_source($line);
+				$line = array();
+			}
+		}
+
+		if (!empty($line)) {
+			$lines[] = self::tokens_to_source($line);
+		}
+
+		return $lines;
+	}
+
+
+	/**
+	 * подобно str_pos
+	 * @param mixed $code
+	 * @param $token_value 	может быть false, но тогда $token_type не долежн быть ложью
+	 * @param $token_type	если ложь, то ищем атомарный токен
+	 * @return int
+	 */
+	public static function token_ispos($code, $token_value, $token_type = false)
+	{
+		if (!is_array($code)) {
+			if (!self::is_open_tag($code)) {
+				$code = '<?php' . $code;
+			}
+
+			$code = self::get_tokens($code, true);
+		}
+
+		foreach ($code as $i => $token) {
+
+			if ($token_type === false && $token === $token_value) {
+				return $i;
+			}
+
+			if ($token_value === false && is_array($token) && $token[0] === $token_type) {
+				return $i;
+			}
+
+			if ($token_value !== false && $token_type !== false
+				&& $token[0] === $token_type
+				&& $token[1] == $token_value
+			) {
+				return $i;
+			}
+		}
+
+		return false;
+	}
 } 

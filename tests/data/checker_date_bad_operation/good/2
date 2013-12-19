@@ -1,0 +1,28 @@
+if (is_numeric($date)) {
+			$dateValue = intval($date);
+
+			$my_excelBaseDate = 25569;
+			//	Adjust for the spurious 29-Feb-1900 (Day 60)
+			if ($dateValue < 60) {
+				--$my_excelBaseDate;
+			}
+
+			// Perform conversion
+			if ($dateValue >= 1) {
+				$utcDays = $dateValue - $my_excelBaseDate;
+				$returnValue = round($utcDays * 86400);
+				if (($returnValue <= PHP_INT_MAX) && ($returnValue >= -PHP_INT_MAX)) {
+					$returnValue = (integer) $returnValue;
+				}
+			} else {
+				// при необходимости можно добавить обработку дробныъ значений - даты со временем в представлении экселя
+				$hours = round($dateValue * 24);
+				$mins = round($dateValue * 1440) - round($hours * 60);
+				$secs = round($dateValue * 86400) - round($hours * 3600) - round($mins * 60);
+				$returnValue = (integer) gmmktime($hours, $mins, $secs);
+			}
+
+			$date = date('d.m.Y', $returnValue);
+		}
+
+		return $date;

@@ -2,13 +2,15 @@
 
 include 'bootstrap.php';
 
-//$cs = file_get_contents('source/sub_extract.php');
-$cs = file_get_contents('source/subsimple.php');
 
-//$results = Procedures::get_all_procedures_in_code($cs);
+//print_r(Tokenizer::get_tokens_of_expression('$a . $b'));
+//die();
 
-//print_r($results);
-print_r(Tokenizer::get_tokens($cs));
+$cs = file_get_contents('/home/kirill/apps/sa/tests/data/checker_date_bad_operation/good/7');
+
+$dec = new DateBadOperation();
+
+var_dump($dec->check($cs));
 
 echo PHP_EOL;
 

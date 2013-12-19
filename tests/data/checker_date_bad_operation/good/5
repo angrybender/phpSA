@@ -1,0 +1,35 @@
+$attrs = $compiler->_parse_attrs($tag_attrs);
+		$aliases_ar = (array)Config::get('host.alias');
+
+		if (!empty($attrs['host'])) {
+			$config_path = 'http://' . str_replace('"', '', $attrs['host']) . '/';
+		} elseif (isset($_SERVER['HTTP_HOST']) && !empty($aliases_ar) && in_array('http://'.$_SERVER['HTTP_HOST'].'/', $aliases_ar)) {
+			$config_path = 'http://' . $_SERVER['HTTP_HOST'] . '/';
+		} else {
+			$config_path = Config::get('host.web.css');
+		}
+
+		// FIXME: эта строчка не может быть задействована, так как не сработает проверка filemtime($path)
+		$attrs['src'] = str_replace('$this->', '$compiler->', $attrs['src']);
+		$attrs['src'] = str_replace('"', '', $attrs['src']);
+
+		if (empty($attrs['src'])) {
+			$compiler->_syntax_error('missing "src" attribute in css_include tag', E_USER_ERROR, __FILE__, __LINE__);
+		}
+
+		$path = Config::get('host.local.css') . $attrs['src'];
+
+		if (isset($compiler->_tpl_vars['params']['sec'])) {
+			$skin_name  = $compiler->_tpl_vars['params']['sec'];
+			$web_skin   = Config::get('host.skin.' . $skin_name . '.web.css', true);
+			$local_skin = Config::get('host.skin.' . $skin_name . '.local.css', true);
+			if (!empty($web_skin) && !empty($local_skin)) {
+				if (file_exists($local_skin . $attrs['src'])) {
+					$path		= $local_skin . $attrs['src'];
+					$config_path	= $web_skin;
+				}
+			}
+		}
+
+		$web_path = $config_path . preg_replace('/\.css$/','',$attrs['src']) . '.v' .date('YmdHis', filemtime($path)) . '.css';
+		return 'echo \'<link rel="stylesheet" type="text/css" href="' . $web_path . '" />' . $compiler->_additional_newline . '\';';

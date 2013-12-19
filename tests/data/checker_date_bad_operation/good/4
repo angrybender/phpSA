@@ -1,0 +1,22 @@
+$loc = $location;
+			if(strlen($loc) > self::MAX_URL_LENGTH) {
+				trigger_error("Argument 1 (location) for function ".__CLASS__."::".__FUNCTION__."() is more than ".self::MAX_URL_LENGTH." characters and will be truncated,", E_USER_WARNING);
+				$loc = substr($loc, 0, self::MAX_URL_LENGTH);
+			}
+
+			$this->loc = htmlentities($loc);
+
+			if(is_string($lastmod) && !empty($lastmod))
+				$this->lastmod = $lastmod;
+			else if(is_numeric($lastmod) && ($date = date(self::FORMAT_DATE, $lastmod)) !== FALSE)
+				$this->lastmod = $date;
+
+			if(in_array($changefreq, self::$CHANGE_FREQ_VALUES))
+				$this->changefreq = $changefreq;
+
+			if(is_numeric($priority)) {
+				if($priority < self::MIN_PRIORITY) $priority = self::MIN_PRIORITY;
+				else if($priority > self::MAX_PRIORITY) $priority = self::MAX_PRIORITY;
+
+				$this->priority = sprintf("%01.1f", $priority);
+			}

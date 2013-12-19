@@ -40,7 +40,7 @@ class Procedures {
 			}
 
 			if (in_array($token[0], $func_equal_instructions)) {
-				$results[] = $token[1];
+				$results[] = strtolower($token[1]);
 				continue;
 			}
 

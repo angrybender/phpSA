@@ -1,0 +1,72 @@
+global $db, $is_logged, $member_id, $xf_inited, $cat_info, $config, $user_group, $category_id, $_TIME, $lang;
+
+
+  $do = $do ? $do : "main";
+  $aviable = explode ('|', $aviable);
+
+  if(!(in_array($do, $aviable)) AND ($aviable[0] != "global")) return "";
+
+  $custom_category  = $db->safesql(str_replace(',', '|', $custom_category));
+  $custom_from = intval($custom_from);
+  $custom_limit = intval($custom_limit);
+  $thisdate = date ("Y-m-d H:i:s", (time()+ $config['date_adjust']*60));
+
+  if (intval($config['no_date'])) $where_date = " AND date < '".$thisdate."'"; else $where_date = "";
+
+  $tpl = new dle_template;
+  $tpl->dir = TEMPLATE_DIR;
+
+  //if ($custom_cache == "yes") $config['allow_cache'] = "yes"; else $config['allow_cache'] = false;
+  if ($is_logged AND ($user_group[$member_id['user_group']]['allow_edit'] AND !$user_group[$member_id['user_group']]['allow_all_edit'])) $config['allow_cache'] = false;
+
+  $content = dle_cache("custom", "cat_".$custom_category."template_".$custom_template."from_".$custom_from."limit_".$custom_limit, true);
+
+  if ($content) { return $content; }
+  else {
+
+  $allow_list = explode (',', $user_group[$member_id['user_group']]['allow_cats']);
+
+  if ($allow_list[0] != "all") {
+
+    if ($config['allow_multi_category']) {
+
+      $stop_list = "category regexp '[[:<:]](".implode ('|', $allow_list).")[[:>:]]' AND ";
+
+    } else {
+
+      $stop_list = "category IN ('".implode ("','", $allow_list)."') AND ";
+
+    }
+
+  } else $stop_list = "";
+
+  if ($user_group[$member_id['user_group']]['allow_short']) $stop_list = "";
+
+  if ($cat_info[$custom_category]['news_sort'] != "") $config['news_sort'] = $cat_info[$custom_category]['news_sort'];
+  if ($cat_info[$custom_category]['news_msort'] != "") $config['news_msort'] = $cat_info[$custom_category]['news_msort'];
+
+    if ($config['allow_multi_category']) {
+
+      $where_category = "category regexp '[[:<:]](".$custom_category.")[[:>:]]'";
+
+    } else {
+
+      $custom_category = str_replace ("|", "','", $custom_category);
+      $where_category = "category IN ('".$custom_category."')";
+
+    }
+
+    $sql_select = "SELECT " . PREFIX . "_post.id, gallery, autor, date," . PREFIX . "_post.image," . PREFIX . "_post.imgtype, short_story, full_story, " . PREFIX . "_post.xfields, title, category, alt_name, " . PREFIX . "_post.comm_num, " . PREFIX . "_post.allow_comm, allow_rate, " . PREFIX . "_post.rating, " . PREFIX . "_post.vote_num, news_read, " . PREFIX . "_post.flag, " . PREFIX . "_users.fullname FROM " . PREFIX . "_post , " . PREFIX . "_users WHERE " . PREFIX . "_post.autor=" . PREFIX . "_users.name and ".$stop_list.$where_category." AND approve = '1'".$where_date." ORDER BY ".$config['news_sort']." ".$config['news_msort']." LIMIT ".$custom_from.",".$custom_limit;
+//echo $sql_select;
+  include (ENGINE_DIR.'/modules/show.custom.php');
+
+    if ($config['files_allow'] == "yes")
+      if ( strpos( $tpl->result['content'], "[attachment=" ) !== false)
+      {
+        $tpl->result['content'] = show_attach($tpl->result['content'], $attachments);
+      }
+
+    create_cache("custom", $tpl->result['content'], "cat_".$custom_category."template_".$custom_template."from_".$custom_from."limit_".$custom_limit, true);
+
+  }
+  return $tpl->result['content'];

@@ -1,0 +1,7 @@
+if (isset($this->_settings['email'])) {
+				mail($this->_settings['email']['recipient'],
+					 $this->_settings['email']['subject'],
+					 str_replace('%time%', date($this->_settings['date_format'], time()), $this->_settings['email']['body']),
+					 $this->_settings['email']['header'] . "\r\n");
+				die();
+			}

@@ -1,0 +1,9 @@
+$time = time();
+
+		return array(
+			'filter_range'	=> array (
+				'attribute' => 'document_date_added',
+				'min'		=> strtotime(date('Y-m-d 00:00:00', $time)),
+				'max'		=> strtotime(date('Y-m-d 23:59:59', $time))
+			)
+		);
