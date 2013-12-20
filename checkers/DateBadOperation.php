@@ -66,7 +66,7 @@ class DateBadOperation {
 
 		$evristic_points = $this->code_saturation(array_merge($variables_near_date, $variables_near_str_operations));
 
-		//echo $evristic_points, PHP_EOL, $intersect_count, PHP_EOL;
+		echo $evristic_points, PHP_EOL, $intersect_count, PHP_EOL;
 
 		// *баная магия
 		return !($intersect_count>0.75 || $evristic_points>=0.4);

@@ -46,7 +46,7 @@ class Procedures_extract_full_class_method extends PHPUnit_Framework_TestCase {
 			),
 			array(
 				'$class->sub(123)',
-				'$class->sub'
+				'$class->sub1'
 			),
 			array(
 				'$class->sub($var->ty)->init()',
