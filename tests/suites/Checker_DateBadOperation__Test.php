@@ -6,6 +6,13 @@
 
 include __DIR__ . '/../../bootstrap.php';
 
+class DateBadOperation_mock extends DateBadOperation {
+	public function __construct($source_code)
+	{
+
+	}
+}
+
 class Checker_DateBadOperation extends PHPUnit_Framework_TestCase
 {
 	private $base_path = 'data/checker_date_bad_operation/';
@@ -15,7 +22,7 @@ class Checker_DateBadOperation extends PHPUnit_Framework_TestCase
 	 */
 	public function test_Checker_DateBadOperation_good($code)
 	{
-		$checker = new DateBadOperation();
+		$checker = new DateBadOperation_mock('');
 		$result = $checker->check($code);
 
 		$this->assertEquals(true, $result);
@@ -40,7 +47,7 @@ class Checker_DateBadOperation extends PHPUnit_Framework_TestCase
 	 */
 	public function test_Checker_DateBadOperation_bad($code)
 	{
-		$checker = new DateBadOperation();
+		$checker = new DateBadOperation_mock('');
 		$result = $checker->check($code);
 
 		$this->assertEquals(false, $result);

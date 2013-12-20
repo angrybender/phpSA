@@ -69,7 +69,7 @@ class Tokenizer {
 			}
 		}
 
-		$result = self::get_tokens($code);
+		$result = self::get_tokens($code, true);
 		if ($is_remove_open_tag) {
 			unset($result[0]);
 			$result = array_values($result);
@@ -241,27 +241,6 @@ class Tokenizer {
 		}
 
 		return join('', $arr_tokens);
-	}
-
-	/**
-	 * выбирает выражения внутри if
-	 * todo elseif
-	 *
-	 * @param $tokens
-	 * @return array
-	 */
-	public static function get_all_ifconditions($tokens)
-	{
-		$result = array();
-
-		$if_start = false;
-		foreach ($tokens as $i => $token) {
-			if ($token[0] == 'T_IF') {
-				$result[] = self::find_full_first_expression(array_slice($tokens, $i+1), '(', ')');
-			}
-		}
-
-		return $result;
 	}
 
 	/**

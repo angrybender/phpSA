@@ -1,11 +1,16 @@
 <?php
 /**
- * todo эвристический чекер
  * пытается определить вероятный говнокод при обработке даты (неоптимальное использованение языка, неприменение существующих ф-ий и тд)
  * @author k.vagin
  */
 
-class DateBadOperation {
+class DateBadOperation extends \Analisator\ParentChecker {
+
+	protected $types = array(
+		CHECKER_HEURISTIC
+	);
+
+	protected $error_message = 'Подозрение на неоптимальную обработку даты/времени';
 
 	private $suspicious_date_functions = array(
 		'date',
@@ -31,7 +36,11 @@ class DateBadOperation {
 	private $tokens = array();
 	private $code_lines = array();
 
-	public function check($code="")
+	/**
+	 * @param $code
+	 * @return bool
+	 */
+	public function check($code)
 	{
 		if (!Tokenizer::is_open_tag($code)) {
 			$code = '<?php ' . $code;
@@ -80,14 +89,14 @@ class DateBadOperation {
 	{
 		$functions = Procedures::get_all_procedures_in_code(array_slice($this->tokens, 0, round(count($this->tokens)/2))); // эвристика - ищем в первой половине кода
 
-		// хардкод откровенного пиздеца:
+		// хардкод откровенного пиздеца: todo refactoring
 		if ((count($functions)<=6) && in_array('date', $functions) && in_array('explode', $functions) && in_array('mktime', $functions)) {
 			return true;
 		}
 
 		$date_fc = count(array_intersect($functions, $this->suspicious_date_functions));
 
-		if ($date_fc == 0) return false;
+		if ($date_fc === 0) return false;
 
 		$str_fc = count(array_intersect($functions, $this->suspicious_string_functions));
 		if ($str_fc < 2 && !$this->is_suspicious_arrays()) return false;
@@ -169,7 +178,7 @@ class DateBadOperation {
 	}
 
 	/**
-	 * ищет массивы, которые вероятно могут содержать дни недели
+	 * ищет массивы, которые вероятно могут содержать дни недели или месяцы (характерно для пахнущего кода)
 	 */
 	public function is_suspicious_arrays()
 	{
@@ -277,7 +286,7 @@ class DateBadOperation {
 	}
 
 	/**
-	 * "насыщеннсть" кода извлеченными переменными
+	 * "насыщенность" кода извлеченными переменными
 	 * @param array
 	 * @return float
 	 */
