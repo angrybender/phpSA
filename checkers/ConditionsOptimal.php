@@ -4,11 +4,32 @@
  * @author k.vagin
  */
 
-class Conditions {
+namespace Checkers;
 
-	public static function check($expression="")
+class ConditionsOptimal extends \Analisator\ParentChecker
+{
+	protected $types = array(
+		CHECKER_ERRORS
+	);
+
+	protected $error_message = 'Условие скорее всего содержит избыточную логику (лишняя переменная или ошибка в результате копирования)';
+
+	protected $extractor = 'Conditions'; // класс-извлекатель нужных блоков
+
+	public function check($code)
 	{
-		return self::check_boolean_expression($expression);
+		file_put_contents('log.txt', $code.PHP_EOL, FILE_APPEND);
+
+		try {
+			$expression = \Tokenizer::code_normalizer($code);
+			$expression = \Expressions::reduce_and_normalize_boolean_expression($expression);
+			return $this->check_boolean_expression($expression);
+		}
+		catch (\Exception $e) {
+			echo $code;
+			die(PHP_EOL);
+		}
+
 	}
 
 	/**
@@ -16,16 +37,16 @@ class Conditions {
 	 * принцип: проходим по всем переменным и заменяем их на TRUE или FALSE (без учета повторов) - потом считаем по каждой переменной сколько раз значение выражения не изменилось
 	 * если повторов переменных нет, то выражение чистое
 	 *
-	 * внимание: выражение должно быть обязательно нормализовано (Tokenizer::reduce_and_normalize_boolean_expression)
+	 * внимание: выражение должно быть обязательно нормализовано (Expressions::reduce_and_normalize_boolean_expression)
 	 *
 	 * @param string $expression
 	 * @return bool
 	 */
-	public static function check_boolean_expression($expression="")
+	public function check_boolean_expression($expression="")
 	{
-		$tokens = Tokenizer::get_tokens('<?php ' . $expression, true);
+		$tokens = \Tokenizer::get_tokens('<?php ' . $expression, true);
 
-		$vars = Variables::get_all_vars_in_expression($expression);
+		$vars = \Variables::get_all_vars_in_expression($expression);
 		if (count($vars)<2) return true; // нечего проверять
 
 		$var_count = count($vars); // число разных переменных
@@ -41,9 +62,9 @@ class Conditions {
 			return true;
 		}
 
-		$variables = Utils::get_all_variables($var_count); // карта входных значений
+		$variables = \Utils::get_all_variables($var_count); // карта входных значений
 
-		$expression_normal_result = self::calculate_boolean($expression, $vars, $variables);
+		$expression_normal_result = $this->calculate_boolean($expression, $vars, $variables);
 
 		$suspicion = array();
 		foreach ($tokens as $i => $token) {
@@ -54,8 +75,8 @@ class Conditions {
 					1
 				);
 
-				$new_expression = substr(Tokenizer::tokens_to_source($tokens), 5); // тут это допустимо, структура детерминирована
-				$new_exp_results1 = self::calculate_boolean($new_expression, $vars, $variables);
+				$new_expression = substr(\Tokenizer::tokens_to_source($tokens), 5); // тут это допустимо, структура детерминирована
+				$new_exp_results1 = $this->calculate_boolean($new_expression, $vars, $variables);
 
 				//echo $new_expression . ' : ' . $new_exp_results1 . ' / ' . $expression_normal_result . PHP_EOL;
 
@@ -65,8 +86,8 @@ class Conditions {
 					1
 				);
 
-				$new_expression = substr(Tokenizer::tokens_to_source($tokens), 5);
-				$new_exp_results2 = self::calculate_boolean($new_expression, $vars, $variables);
+				$new_expression = substr(\Tokenizer::tokens_to_source($tokens), 5);
+				$new_exp_results2 = $this->calculate_boolean($new_expression, $vars, $variables);
 
 				//echo $new_expression . ' : ' . $new_exp_results2 . ' / ' . $expression_normal_result. PHP_EOL;
 
@@ -91,7 +112,7 @@ class Conditions {
 	 * @param array $variables
 	 * @return string
 	 */
-	private static function calculate_boolean($expression = "", array $vars, array $variables)
+	private function calculate_boolean($expression = "", array $vars, array $variables)
 	{
 		$expression_value_map = array();
 		foreach ($variables as $nest) {
@@ -104,7 +125,7 @@ class Conditions {
 				}, $nest)
 			);
 
-			$expression_value_map[] = Expressions::calculate_boolean_expression($expression, $in_var);
+			$expression_value_map[] = \Expressions::calculate_boolean_expression($expression, $in_var);
 		}
 
 		return join('', array_map(function($value) {

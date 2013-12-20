@@ -113,6 +113,10 @@ class Tokenizer {
 				$arr_tokens[] = $token;
 			}
 			else {
+				// иначе склеиваются
+				if (strtoupper($token[1]) === 'OR' || strtoupper($token[1]) === 'AND') {
+					$token[1] = " {$token[1]} ";
+				}
 				$arr_tokens[] = $token[1];
 			}
 		}

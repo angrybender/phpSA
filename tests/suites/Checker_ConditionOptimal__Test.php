@@ -5,9 +5,9 @@
  */
 
 include __DIR__ . '/../../bootstrap.php';
-include __DIR__ . '/../../checkers/DateBadOperation.php';
+include __DIR__ . '/../../checkers/ConditionsOptimal.php';
 
-class DateBadOperation_mock extends \Checkers\DateBadOperation {
+class ConditionsOptimal_mock extends \Checkers\ConditionsOptimal {
 	public function __construct($source_code)
 	{
 
@@ -16,14 +16,14 @@ class DateBadOperation_mock extends \Checkers\DateBadOperation {
 
 class Checker_DateBadOperation extends PHPUnit_Framework_TestCase
 {
-	private $base_path = 'data/checker_date_bad_operation/';
+	private $base_path = 'data/checker_conditions_optimal/';
 
 	/**
 	 * @dataProvider provider_good
 	 */
-	public function test_Checker_DateBadOperation_good($code)
+	public function test_ConditionsOptimal_good($code)
 	{
-		$checker = new DateBadOperation_mock('');
+		$checker = new ConditionsOptimal_mock('');
 		$result = $checker->check($code);
 
 		$this->assertEquals(true, $result);
@@ -46,9 +46,9 @@ class Checker_DateBadOperation extends PHPUnit_Framework_TestCase
 	/**
 	 * @dataProvider provider_bag
 	 */
-	public function test_Checker_DateBadOperation_bad($code)
+	public function test_ConditionsOptimal_bad($code)
 	{
-		$checker = new DateBadOperation_mock('');
+		$checker = new ConditionsOptimal_mock('');
 		$result = $checker->check($code);
 
 		$this->assertEquals(false, $result);

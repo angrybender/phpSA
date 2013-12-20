@@ -10,11 +10,23 @@ class Expressions {
 	 * исходное выражение к булевской функции
 	 * нет обработки цепочечных вызовов, выражений вида "{$a}"
 	 *
+	 * fixme очень много костылей
 	 * @param string $expression
 	 * @return string
 	 */
 	public static function reduce_and_normalize_boolean_expression($expression)
 	{
+		// очень редко, но иногда попадаются строковые литералы с < ? и ? >
+		$expression = str_replace(array(
+									'"<?',
+									'?>',
+									'\'<?',
+									'<?xml'
+								),
+								array(
+									"","","",""
+								), $expression);
+
 		if (!Tokenizer::is_open_tag($expression)) {
 			$expression = '<?php ' . $expression;
 		}
@@ -22,6 +34,27 @@ class Expressions {
 		$tokens = Tokenizer::get_tokens($expression, true);
 		$var_count = 0; // псевдопеременные
 		$var_template = '$rvar_';
+
+		// удалим оператор подавления ошибок и оператор определения нейспейса (\)
+		$tokens = array_values(array_filter($tokens, function($val){
+			if (is_array($val) && $val[0] === 'T_NS_SEPARATOR') {
+				return false;
+			}
+			return ($val !== '@');
+		}));
+
+		// удалим сочетание =!
+		foreach ($tokens as $i => $token) {
+			if ($token === '='
+				&& isset($tokens[$i+1])
+				&& $tokens[$i+1] === '!'
+			) {
+				$tokens[$i+1] = '';
+			}
+		}
+
+		// очистка от пустых токенов
+		$tokens = array_values(array_filter($tokens));
 
 		/*
 		 * заменяем
@@ -38,6 +71,25 @@ class Expressions {
 			$var_count++;
 			$tokens = Tokenizer::token_replace('T_VARIABLE', $var, $var_template.$var_count, $tokens);
 		}
+
+		// заменяем константы на переменные
+		foreach ($tokens as $i => $token) {
+			if (is_array($token)
+				&& $token[0] === 'T_STRING'
+				&& isset($tokens[$i+1])
+				&& $tokens[$i+1] !== '(' // строковый литерал но не функция
+			) {
+				$var_count++;
+				$tokens[$i] = array(
+					'T_VARIABLE',
+					$var_template.$var_count,
+					1
+				);
+			}
+		}
+
+		// очистка от пустых токенов
+		$tokens = array_values(array_filter($tokens));
 
 		// заменим любую фунцию и ряд инструкций языка на синтетическую переменную
 		// но, так, чтобы одинаковые фукнции с одним набором аргументов прервратились в 1 переменную
@@ -105,11 +157,7 @@ class Expressions {
 		}
 
 		// очистка от пустых токенов
-		$tmp_result = array_filter($tokens);
-		$tokens = array();
-		foreach ($tmp_result as $token) {
-			$tokens[] = $token;
-		}
+		$tokens = array_values(array_filter($tokens));
 
 		// устранение ссылок на классы
 		// не понимает цепочечных вызовов
@@ -122,6 +170,8 @@ class Expressions {
 				&& isset($tokens[$i+1])
 				&& is_array($tokens[$i+1])
 				&& ($tokens[$i+1][0] === 'T_OBJECT_OPERATOR' || $tokens[$i+1][0] === 'T_DOUBLE_COLON')
+				&& isset($tokens[$i+2])
+				&& is_array($tokens[$i+2])
 			) {
 				$sign = strtolower($token[1]) . $tokens[$i+1][0] . strtolower($tokens[$i+2][1]);
 				if (!isset($classes_dict[$sign])) {
@@ -145,11 +195,7 @@ class Expressions {
 		}
 
 		// очистка от пустых токенов
-		$tmp_result = array_filter($tokens);
-		$tokens = array();
-		foreach ($tmp_result as $token) {
-			$tokens[] = $token;
-		}
+		$tokens = array_values(array_filter($tokens));
 
 		// очистка от всех не булевский операторов (оператор ! придется обрабатывать костылем)
 		$unar_operators = array(
@@ -249,6 +295,67 @@ class Expressions {
 			}
 		}
 
+		// очистим от фигурных скобок (подстановка переменных по значению) получаются конструкции вида $this->{$rvar_3}
+		$tokens = array_values(array_filter($tokens, function($val){
+			return ($val !== '{' && $val !== '}');
+		}));
+
+		// очистка от артефактов работы цикла "устранение ссылок на классы" - т.к пока не умеет цепочечные вызовы остаются склееные переменные
+		// остаются связки вида $var1->$var2 $var1::$var2
+		while (true) {
+			$is_found = false;
+
+			// очистка от пустых токенов
+			$tokens = array_values(array_filter($tokens));
+
+			foreach ($tokens as $i => $token) {
+				if (is_array($token)
+					&& $token[0] === 'T_VARIABLE'
+					&& isset($tokens[$i+1])
+					&& is_array($tokens[$i+1])
+					&& $tokens[$i+1][0] === 'T_VARIABLE'
+				) {
+					// вида $var1$var2
+					$var_count++;
+
+					$tokens[$i] = array(
+						'T_VARIABLE',
+						$var_template.$var_count,
+						1
+					);
+					$tokens[$i+1] = '';
+					$is_found = true;
+					break;
+				}
+
+				if (is_array($token)
+					&& $token[0] === 'T_VARIABLE'
+					&& isset($tokens[$i+1])
+					&& is_array($tokens[$i+1])
+					&& ($tokens[$i+1][0] === 'T_OBJECT_OPERATOR' || $tokens[$i+1][0] === 'T_DOUBLE_COLON')
+					&& isset($tokens[$i+2])
+					&& is_array($tokens[$i+2])
+					&& $tokens[$i+2][0] === 'T_VARIABLE'
+				) {
+					$var_count++;
+
+					$tokens[$i] = array(
+						'T_VARIABLE',
+						$var_template.$var_count,
+						1
+					);
+					$tokens[$i+1] = '';
+					$tokens[$i+2] = '';
+					$is_found = true;
+					break;
+				}
+			}
+
+			if (!$is_found) {
+				break;
+			}
+		}
+
 		return Tokenizer::remove_open_tag(Tokenizer::tokens_to_source($tokens));
 	}
 
@@ -268,6 +375,8 @@ class Expressions {
 			$vars_declare = $vars_declare .
 				'$'.$name.' = ' . ($value ? 'TRUE' : 'FALSE') . ';'. PHP_EOL;
 		}
+
+		file_put_contents('log.txt', $vars_declare . 'return ' . $expression.PHP_EOL, FILE_APPEND);
 
 		return eval($vars_declare . 'return ' . $expression);
 	}

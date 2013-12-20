@@ -31,7 +31,7 @@ abstract class ParentChecker {
 	/**
 	 * @var \Analisator\ParentExtractor
 	 */
-	protected $extractor = ''; // класс-извлекатель нужных блоков
+	protected $extractor = ''; // класс-извлекатель нужных блоков, имя без неймспейса
 
 	/**
 	 * public for unit tests
@@ -47,7 +47,7 @@ abstract class ParentChecker {
 	{
 		$reporter = Report::getInstance();
 		foreach ($this->blocks as $block) {
-			$result = $this->check($block);
+			$result = $this->check($block['body']);
 
 			if ($result === false) {
 				$reporter->addError(
@@ -65,6 +65,7 @@ abstract class ParentChecker {
 			throw new \Exception("класс-извлекатель нужных блоков empty"); // todo Exception
 		}
 
+		$this->extractor = 'Extractors\\' . $this->extractor;
 		$extractor_obj = new $this->extractor($source_code);
 		if (!($extractor_obj instanceof \Analisator\ParentExtractor)) {
 			throw new \Exception("класс-извлекатель не \\Analisator\\ParentExtractor"); // todo Exception

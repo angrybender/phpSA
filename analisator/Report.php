@@ -89,4 +89,9 @@ class Report {
 	{
 		$this->current_file = $file_name;
 	}
+
+	public function getRawErrors()
+	{
+		return $this->errors;
+	}
 } 
