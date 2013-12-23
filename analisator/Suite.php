@@ -137,21 +137,19 @@ class Suite {
 		$code = file_get_contents($file_path);
 		$tokens = \Tokenizer::get_tokens($code);
 
-		foreach ($this->checkers as $checker) {
-			$last_error = count($this->reporter->getRawErrors());
+		$last_error = count($this->reporter->getRawErrors());
 
-			try {
+		try {
+			foreach ($this->checkers as $checker) {
 				$checker_object = new $checker($tokens);
-
-				$err_count = count($this->reporter->getRawErrors()) - $last_error;
-				$this->print_result($err_count);
-			}
-			catch (\Exception $e) {
-				$this->print_result(0, true);
+				unset($checker_object);
 			}
 
-
-			unset($checker_object);
+			$err_count = count($this->reporter->getRawErrors()) - $last_error;
+			$this->print_result($err_count);
+		}
+		catch (\Exception $e) {
+			$this->print_result(0, true);
 		}
 	}
 
