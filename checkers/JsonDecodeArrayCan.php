@@ -15,7 +15,7 @@ class JsonDecodeArrayCan extends \Analisator\ParentChecker
 		CHECKER_HEURISTIC
 	);
 
-	protected $error_message = 'str_replace умеет принимать массив аргументов, можно избежать дублирования';
+	protected $error_message = 'возможно лишняя конвертация, json_decode может сразу возвращать array, если установить второй аргумент в true';
 
 	protected $extractor = 'Full'; // класс-извлекатель нужных блоков
 
@@ -65,6 +65,10 @@ class JsonDecodeArrayCan extends \Analisator\ParentChecker
 		}
 
 		foreach ($suspicious_vars as $var_name) {
+			if (empty($var_name['name'])) {
+				continue;
+			}
+
 			if ($this->is_var_in_array_operation($var_name['name'])) {
 				$this->line[] = $var_name['line'];
 			}
