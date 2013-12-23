@@ -31,14 +31,28 @@ class StrReplaceOptimal extends \Analisator\ParentChecker
 	 * @param array $code
 	 * @return bool
 	 */
-	public function check($code)
+	public function check($tokens)
 	{
-		//$code = \Tokenizer::tokens_to_source($code);
+		$calle = array();
+		foreach ($tokens as $i => $token) {
+			if (is_array($token)
+				&& $token[0] === 'T_STRING'
+				&& isset($tokens[$i+1])
+				&& $tokens[$i+1][0] == '('
+				&& strtolower($token[1]) === 'str_replace'
+				&& ($i>0)
+				&& $tokens[$i-1] === '='
+			) {
 
-		$calle_extractor = new \Extractors\CalledFunction($code);
-		$calle = $calle_extractor->extract(array(
-			'name' => 'str_replace'
-		));
+				$_calle = \Tokenizer::find_full_first_expression(array_slice($tokens, $i+1), '(', ')');
+
+				$calle[] = array(
+					'name' => $token[1],
+					'body' => $_calle,
+					'line' => $token[2]
+				);
+			}
+		}
 
 		// пропускаем везде, где массивы в качестве аргументов
 		foreach ($calle as $i => $call) {

@@ -89,7 +89,7 @@ class DateBadOperation extends \Analisator\ParentChecker
 		//echo $evristic_points, PHP_EOL, $intersect_count, PHP_EOL;
 
 		// *баная магия
-		return !($intersect_count>0.75 || $evristic_points>=0.35);
+		return !($intersect_count>0.75 || $evristic_points>=0.21);
 	}
 
 	/**

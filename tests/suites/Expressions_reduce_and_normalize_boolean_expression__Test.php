@@ -70,7 +70,7 @@ class Expressions_reduce_and_normalize_boolean_expression extends PHPUnit_Framew
 				'( ($url = $style->background_image) && $url !== "none"
          && ($repeat = $style->background_repeat) && $repeat !== "repeat" &&  $repeat !== "repeat-y"
        )',
-				''
+				'($rvar_7&&$rvar_8&&$rvar_9&&$rvar_10&&$rvar_11)'
 			)
 		);
 	}

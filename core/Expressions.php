@@ -221,7 +221,7 @@ class Expressions {
 			'T_NEW',
 			'T_OBJECT_CAST',
 			'T_STRING_CAST',
-			'T_UNSET_CAST'
+			'T_UNSET_CAST',
 		);
 		$operator_args = array( // участники операций
 			'T_VARIABLE',
@@ -237,7 +237,8 @@ class Expressions {
 			'T_IS_GREATER_OR_EQUAL',
 			'T_CONCAT_EQUAL',
 			'T_IS_EQUAL',
-			'T_IS_IDENTICAL'
+			'T_IS_IDENTICAL',
+			'T_IS_NOT_IDENTICAL'
 		);
 		$while_stop_semafor=1000;
 		while (true) {

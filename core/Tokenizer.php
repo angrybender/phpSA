@@ -65,7 +65,7 @@ class Tokenizer {
 		if (!is_array($code)) {
 			if (!self::is_open_tag($code)) {
 				$is_remove_open_tag = true;
-				$code = '<?php' . $code;
+				$code = '<?php ' . $code;
 			}
 		}
 
@@ -144,7 +144,7 @@ class Tokenizer {
 		if (!is_array($expression)) {
 			$is_source = true;
 			if (!self::is_open_tag($expression)) {
-				$expression = '<?php' . $expression;
+				$expression = '<?php ' . $expression;
 			} else {
 				$is_open_tag = true;
 			}
@@ -323,7 +323,7 @@ class Tokenizer {
 	{
 		if (!is_array($code)) {
 			if (!self::is_open_tag($code)) {
-				$code = '<?php' . $code;
+				$code = '<?php ' . $code;
 			}
 
 			$code = self::get_tokens($code, true);
@@ -349,4 +349,98 @@ class Tokenizer {
 
 		return false;
 	}
+
+	/**
+	 * ищет в токенах сложное выражение, переданное как массив
+	 * @param mixed $code
+	 * @param array $needle
+	 * @return int
+	 */
+	public static function token_find($code, array $needle)
+	{
+		if (!is_array($code)) {
+			if (!self::is_open_tag($code)) {
+				$code = '<?php ' . $code;
+			}
+
+			$code = self::get_tokens($code, true);
+		}
+
+		$needle_cnt = count($needle);
+		foreach ($code as $i => $token) {
+			$sub_array = array_slice($code, $i, $needle_cnt);
+			if (count($sub_array) < $needle_cnt) break;
+
+			$is_eq = true;
+			foreach ($sub_array as $j => $sub_token) {
+				if (!is_array($sub_token) && ($sub_token !== $needle[$j])) {
+					$is_eq = false;
+					break;
+				}
+
+				if (is_array($sub_token) &&
+					(
+						!is_array($needle[$j])
+						||
+						($sub_token[0] !== $needle[$j][0])
+						||
+						($sub_token[1] !== $needle[$j][1])
+					)
+				) {
+					$is_eq = false;
+					break;
+				}
+			}
+
+			if ($is_eq) {
+				return $i;
+			}
+		}
+
+		return false;
+	}
+
+
+	/**
+	 * возвращает полное имя переменной, которой присваивается результат работы функции,
+	 * вызов которой расположен на $position_of_fn-й позиции
+	 * @param $tokens
+	 * @param int $position_of_fn
+	 * @return string
+	 */
+	public static function get_assignment_variable_name(array $tokens, $position_of_fn)
+	{
+		if ($position_of_fn < 1) {
+			return false;
+		}
+
+		if ($tokens[$position_of_fn][0] !== 'T_STRING') {
+			return false;
+		}
+
+		$result_tokens = array();
+		$is_eq_find = false;
+		for ($i=$position_of_fn-1; $i>=0; $i--) {
+
+			if ($tokens[$i] === ';'
+				|| $tokens[$i] === '}'
+				|| (is_array($tokens[$i]) && $tokens[$i][0] === 'T_OPEN_TAG')
+				|| (is_array($tokens[$i]) && $tokens[$i][0] === 'T_COMMENT')
+				|| (is_array($tokens[$i]) && $tokens[$i][0] === 'T_DOC_COMMENT')) {
+				break;
+			}
+
+			if ($is_eq_find) {
+				$result_tokens[] = $tokens[$i];
+			}
+
+			if (!$is_eq_find && $tokens[$i] === '=') {
+				$is_eq_find = true;
+			}
+		}
+
+		$result_tokens = array_reverse($result_tokens);
+		return strtolower(self::tokens_to_source($result_tokens));
+	}
+
 } 
