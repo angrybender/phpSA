@@ -23,3 +23,4 @@ include 'extractors/Procedure.php';
 include 'extractors/Conditions.php';
 include 'extractors/Full.php';
 include 'extractors/CalledFunction.php';
+include 'extractors/Blocks.php';
