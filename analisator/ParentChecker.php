@@ -33,6 +33,10 @@ abstract class ParentChecker {
 	 */
 	protected $extractor = ''; // класс-извлекатель нужных блоков, имя без неймспейса
 
+	protected $filter = array(); //фильтр для извлекателя (может не применяться)
+
+	protected $is_line_return = false; // по умолчанию, строка ошибки определяется по началу блока, но функция проверки  может ее переопределить
+	protected $line;					// может быть массивом
 
 	/**
 	 * public for unit tests
@@ -50,11 +54,13 @@ abstract class ParentChecker {
 		foreach ($this->blocks as $block) {
 			$result = $this->check($block['body']);
 
+			$line = $this->is_line_return ? $this->line : $block['line'];
+
 			if ($result === false) {
 				$reporter->addError(
 					$this->error_message,
 					get_class($this),
-					$block['line']
+					$line
 				);
 			}
 		}
@@ -72,9 +78,10 @@ abstract class ParentChecker {
 			throw new \Exception("класс-извлекатель не \\Analisator\\ParentExtractor"); // todo Exception
 		}
 
-		$this->blocks = $extractor_obj->extract();
-		if (!$this->is_extract_mandatory) {
-			$this->blocks = $source_code;
+		$this->blocks = $extractor_obj->extract($this->filter);
+
+		if (empty($this->blocks) && !$this->is_extract_mandatory) {
+			$this->blocks = $source_code; // fixme
 		}
 	}
 

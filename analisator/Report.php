@@ -69,7 +69,7 @@ class Report {
 	 * вставляет ошибку
 	 * @param string $message
 	 * @param string $checker
-	 * @param int $line
+	 * @param int|array $line	если массив, то соответствующе оформляется
 	 */
 	public function addError($message="", $checker="", $line=0)
 	{

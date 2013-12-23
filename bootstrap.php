@@ -21,3 +21,5 @@ include 'core/Variables.php';
 
 include 'extractors/Procedure.php';
 include 'extractors/Conditions.php';
+include 'extractors/Full.php';
+include 'extractors/CalledFunction.php';

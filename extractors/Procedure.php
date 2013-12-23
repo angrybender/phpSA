@@ -13,7 +13,7 @@ class Procedure extends \Analisator\ParentExtractor {
 	 * извлекает из кода информацию о процедурах, функциях, методах (замыкания и анонимки пропускает)
 	 * @return array
 	 */
-	public function extract()
+	public function extract(array $filter = null)
 	{
 		$tokens = $this->tokens;
 		$function = array();

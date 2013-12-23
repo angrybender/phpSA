@@ -21,7 +21,7 @@ abstract class ParentExtractor {
 
 			$is_remove_open_tag = false;
 			if (!is_array($code)) {
-				if (!self::is_open_tag($code)) {
+				if (!\Tokenizer::is_open_tag($code)) {
 					$is_remove_open_tag = true;
 					$code = '<?php' . $code;
 				}
@@ -41,6 +41,6 @@ abstract class ParentExtractor {
 		}
 	}
 
-	public function extract()
+	public function extract(array $filter)
 	{}
 } 

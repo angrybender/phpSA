@@ -65,6 +65,13 @@ class Expressions_reduce_and_normalize_boolean_expression extends PHPUnit_Framew
 				'($number >= 1024 && $number <= 1048575) || ($number <= - 1024 && $number > - 1048575)',
 				'($rvar_4&&$rvar_5)||($rvar_6&&$rvar_7)'
 			),
+
+			array(
+				'( ($url = $style->background_image) && $url !== "none"
+         && ($repeat = $style->background_repeat) && $repeat !== "repeat" &&  $repeat !== "repeat-y"
+       )',
+				''
+			)
 		);
 	}
 } 

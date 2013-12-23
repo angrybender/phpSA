@@ -13,7 +13,7 @@ class Conditions extends \Analisator\ParentExtractor {
 	 * извлекает из кода информацию о условиях if, elseif, while
 	 * @return array
 	 */
-	public function extract()
+	public function extract(array $filter = null)
 	{
 		$conditions = array();
 
