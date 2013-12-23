@@ -29,7 +29,7 @@ class Conditions extends \Analisator\ParentExtractor {
 				$conditions[] = array(
 					'body' => \Tokenizer::find_full_first_expression(array_slice($tokens, $i+1), '(', ')'),
 					'type' => $token[0],
-					'line' => $i
+					'line' => $token[2]
 				);
 			}
 		}

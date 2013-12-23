@@ -88,6 +88,19 @@ class Expressions {
 			}
 		}
 
+		// заменим все отрицательные числа отдельно (из за знака минус)
+		foreach ($tokens as $i => $token) {
+			if ($token === '-' && isset($tokens[$i+1])) {
+				$var_count++;
+				$tokens[$i] = array(
+					'T_VARIABLE',
+					$var_template.$var_count,
+					1
+				);
+				$tokens[$i+1] = '';
+			}
+		}
+
 		// очистка от пустых токенов
 		$tokens = array_values(array_filter($tokens));
 

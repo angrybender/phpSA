@@ -33,6 +33,7 @@ abstract class ParentChecker {
 	 */
 	protected $extractor = ''; // класс-извлекатель нужных блоков, имя без неймспейса
 
+
 	/**
 	 * public for unit tests
 	 * @param $block

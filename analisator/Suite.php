@@ -132,16 +132,24 @@ class Suite {
 	 */
 	protected function run($file_path)
 	{
+		//file_put_contents('log.txt', $file_path.PHP_EOL, FILE_APPEND);
+
 		$code = file_get_contents($file_path);
 		$tokens = \Tokenizer::get_tokens($code);
 
 		foreach ($this->checkers as $checker) {
 			$last_error = count($this->reporter->getRawErrors());
-			$checker_object = new $checker($tokens);
 
-			$err_count = count($this->reporter->getRawErrors()) - $last_error;
+			try {
+				$checker_object = new $checker($tokens);
 
-			$this->print_result($err_count);
+				$err_count = count($this->reporter->getRawErrors()) - $last_error;
+				$this->print_result($err_count);
+			}
+			catch (\Exception $e) {
+				$this->print_result(0, true);
+			}
+
 
 			unset($checker_object);
 		}
@@ -191,10 +199,14 @@ class Suite {
 	 */
 	protected function project_files_iterator()
 	{
+		error_reporting(E_ERROR);
+
 		foreach ($this->project_files as $file) {
 			$this->reporter->reportFile($file['path']);
 			$this->run($file['path']);
 		}
+
+		error_reporting(E_ALL);
 
 		echo PHP_EOL, PHP_EOL;
 	}

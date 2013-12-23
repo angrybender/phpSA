@@ -18,7 +18,7 @@ class ConditionsOptimal extends \Analisator\ParentChecker
 
 	public function check($code)
 	{
-		file_put_contents('log.txt', $code.PHP_EOL, FILE_APPEND);
+		//file_put_contents('log.txt', $code.PHP_EOL, FILE_APPEND);
 
 		try {
 			$expression = \Tokenizer::code_normalizer($code);

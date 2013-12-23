@@ -60,7 +60,11 @@ class Expressions_reduce_and_normalize_boolean_expression extends PHPUnit_Framew
 			array(
 				'($this->{\'_\'.$resource}>$value)',
 				'($rvar_4>$rvar_2)'
-			)
+			),
+			array(
+				'($number >= 1024 && $number <= 1048575) || ($number <= - 1024 && $number > - 1048575)',
+				'($rvar_4&&$rvar_5)||($rvar_6&&$rvar_7)'
+			),
 		);
 	}
 } 
