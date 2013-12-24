@@ -220,9 +220,10 @@ class Tokenizer {
 	 * @param $tokens
 	 * @param $start
 	 * @param $end
+	 * @param $return_array
 	 * @return string
 	 */
-	public static function find_full_first_expression(array $tokens, $start, $end)
+	public static function find_full_first_expression(array $tokens, $start, $end, $return_array = false)
 	{
 		$arr_tokens = array();
 		$queue = 0;
@@ -240,8 +241,12 @@ class Tokenizer {
 				if ($queue==0) break;
 			}
 			elseif (!in_array($token[0], $ignore)) {
-				$arr_tokens[] = $token[1];
+				$arr_tokens[] = $return_array ? $token : $token[1];
 			}
+		}
+
+		if ($return_array) {
+			return $arr_tokens;
 		}
 
 		return join('', $arr_tokens);

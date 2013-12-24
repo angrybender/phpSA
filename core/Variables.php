@@ -7,7 +7,7 @@
 class Variables {
 	/**
 	 * выводит массив имен переменных внутри выражения без повторов
-	 * @param string $expression
+	 * @param string|array $expression
 	 * @param bool	вместо массива возвращать его название и не пропускать массивы
 	 * @return array
 	 */
@@ -54,7 +54,6 @@ class Variables {
 
 				if (// $sometime[ это будет выражение
 					isset($tokens[$i+1])
-					&& !is_array($tokens[$i+1])
 					&& $tokens[$i+1] === '['
 					&& !$array_as_var
 				) {
