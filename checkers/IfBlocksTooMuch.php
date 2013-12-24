@@ -1,6 +1,7 @@
 <?php
 /**
  * очень много вложенных if-ов путает код
+ * todo переработать учет вложенности добавить учет расстояния
  * @author k.vagin
  */
 
@@ -45,7 +46,9 @@ class IfBlocksTooMuch extends \Analisator\ParentChecker {
 			$last_ifpos = $if_pos;
 		}
 
-		return ($cnt < $this->max) || ($this->recursive_if_counter($code, 0) < $this->max); // 2 классификатора для минимизации ложных срабатываний
+		return ($cnt < $this->max) || ($this->recursive_if_counter($code, 0) < $this->max);
+		// 2 классификатора для минимизации ложных срабатываний
+		// один учитывает вложенность, другой - расстояние
 	}
 
 	private function recursive_if_counter($code, $last_count)
