@@ -24,8 +24,6 @@ class VarUndefined extends \Analisator\ParentChecker
 	protected $is_line_return = true; // по умолчанию, строка ошибки определяется по началу блока, но функция проверки  может ее переопределить
 	protected $line = array();
 
-	private $tokens;
-
 	private $predefined_vars = array(
 		'$_POST',
 		'$_SERVER',
@@ -73,7 +71,6 @@ class VarUndefined extends \Analisator\ParentChecker
 
 	public function check($tokens)
 	{
-		$this->tokens = $tokens;
 		// нам нужно извлечь переданные переменные, поэтому стандартный извлекатель не подходит
 		$procedures = array();
 		foreach ($tokens as $i => $token) {

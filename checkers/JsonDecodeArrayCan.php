@@ -49,6 +49,12 @@ class JsonDecodeArrayCan extends \Analisator\ParentChecker
 				&& isset($tokens[$i+1])
 				&& $tokens[$i+1][0] == '('
 				&& strtolower($token[1]) === 'json_decode'
+				&& ($i>1)
+				&& (
+					$tokens[$i-1] === '='
+					||
+					is_array($tokens[$i-1]) && $tokens[$i-1][0] !== 'T_DOUBLE_COLON' && $tokens[$i-1][0] !== 'T_OBJECT_OPERATOR'
+				)
 			) {
 
 				$_args = substr(\Tokenizer::find_full_first_expression(array_slice($tokens, $i+1), '(', ')'), 1);
