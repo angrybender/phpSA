@@ -24,7 +24,7 @@ class VarUndefined extends \Analisator\ParentChecker
 	protected $is_line_return = true; // по умолчанию, строка ошибки определяется по началу блока, но функция проверки  может ее переопределить
 	protected $line = array();
 
-	private $predefined_vars = array(
+	protected $predefined_vars = array(
 		'$_POST',
 		'$_SERVER',
 		'$_GET',
@@ -43,7 +43,7 @@ class VarUndefined extends \Analisator\ParentChecker
 		'$this'
 	);
 
-	private $includes = array(
+	protected $includes = array(
 		'T_INCLUDE',
 		'T_INCLUDE_ONCE',
 		'T_REQUIRE',
@@ -105,12 +105,11 @@ class VarUndefined extends \Analisator\ParentChecker
 	/**
 	 * анализирует отдельный блок кода
 	 * ошибки добавляет сама
-	 * todo refactor
 	 *
 	 * @param $tokens
 	 * @return bool
 	 */
-	private function analize_code($tokens)
+	protected function analize_code($tokens)
 	{
 		if ($this->is_undef_behavior($tokens)) {
 			return true;
@@ -257,7 +256,7 @@ class VarUndefined extends \Analisator\ParentChecker
 	 * @param array
 	 * @return array
 	 */
-	private function variables_assets_by_eq(array $variables, array $_tokens)
+	protected function variables_assets_by_eq(array $variables, array $_tokens)
 	{
 		$tokens_cnt = count($_tokens);
 		foreach ($variables as $i => $var_name) {

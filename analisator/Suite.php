@@ -53,6 +53,18 @@ class Suite {
 
 	public function __construct()
 	{
+		spl_autoload_register(function($class)
+		{
+			$ar_name = explode('\\',$class);
+
+			if (count($ar_name) !== 2) return true;
+
+			// дозагрузка чекеров, срабатывает когда один чекер наследуется от другого
+			if ($ar_name[0] === 'Checkers') {
+				include_once 'checkers/' . $ar_name[1] . '.php';
+			}
+		});
+
 		$this->include_all();
 
 		$this->reporter = Report::getInstance();
