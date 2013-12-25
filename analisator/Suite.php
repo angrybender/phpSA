@@ -149,29 +149,27 @@ class Suite {
 		$code = file_get_contents($file_path);
 		$tokens = \Tokenizer::get_tokens($code);
 
-		$last_error = count($this->reporter->getRawErrors());
-
 		try {
 			foreach ($this->checkers as $checker) {
 				$checker_object = new $checker($tokens);
 				unset($checker_object);
 			}
 
-			$err_count = count($this->reporter->getRawErrors()) - $last_error;
-			$this->print_result($err_count);
+			$this->print_result();
 		}
 		catch (\Exception $e) {
-			$this->print_result(0, true);
+			$this->print_result(true);
 		}
 	}
 
 	/**
 	 * отображает тик проверки (аналогично пхпюнит)
 	 * todo в отд. класс
-	 * @param int $error_count
+	 * @param bool
 	 */
-	private function print_result($error_count, $is_error = false)
+	private function print_result($is_error = false)
 	{
+		$error_count = $this->reporter->getErrCounts();
 		$this->_tick_cnt++;
 		if ($this->_tick_cnt === 100) {
 			echo PHP_EOL;

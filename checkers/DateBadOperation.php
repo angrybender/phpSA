@@ -6,7 +6,7 @@
 
 namespace Checkers;
 
-class DateBadOperation extends \Analisator\ParentChecker
+class DateBadOperation //extends \Analisator\ParentChecker
 {
 
 	protected $types = array(

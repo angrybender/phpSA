@@ -64,6 +64,7 @@ class Report {
 
 	private $errors = array();
 	private $current_file = '';
+	private $cur_err_count = 0;
 
 	/**
 	 * вставляет ошибку
@@ -79,6 +80,8 @@ class Report {
 			'checker' => $checker,
 			'line' => $line
 		);
+
+		$this->cur_err_count = $this->cur_err_count + is_array($line) ? count($line) : 1;
 	}
 
 	/**
@@ -88,10 +91,16 @@ class Report {
 	public function reportFile($file_name = "")
 	{
 		$this->current_file = $file_name;
+		$this->cur_err_count = 0;
 	}
 
 	public function getRawErrors()
 	{
 		return $this->errors;
+	}
+
+	public function getErrCounts()
+	{
+		return $this->cur_err_count;
 	}
 } 

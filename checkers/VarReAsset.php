@@ -49,6 +49,10 @@ class VarReAsset extends VarUndefined
 		$variables = \Variables::get_all_vars_in_expression($tokens['body']);
 		$variables = array_unique(array_merge($_args, $variables));
 
+		if (empty($variables)) {
+			return true;
+		}
+
 		// пропускаем предопределенные
 		$variables = array_diff($variables, $this->predefined_vars);
 
@@ -73,8 +77,10 @@ class VarReAsset extends VarUndefined
 		$this->post_checked($tokens['body']);
 
 		foreach ($this->suspicious_var as $var_name) {
-			$this->line[] = $this->variables_index[$var_name][0];
+			$this->line[] = @$tokens['body'][$this->variables_index[$var_name][0]][2];
 		}
+
+		$this->line = array_filter($this->line);
 	}
 
 	/**
@@ -175,10 +181,11 @@ class VarReAsset extends VarUndefined
 		$lines = \Tokenizer::format_code_into_lines($tokens);
 		$lines = array_filter($lines, function($val) // оптимизируем, выбрасывая строки, которые заведомо не будем обрабатывать
 		{
-			return (strpos($val, '=') !== false || strpos($val, '=') !== false);
+			return (strpos($val, '$') !== false);
 		});
 
 		foreach ($this->suspicious_var as $i => $var_name) {
+			$is_first_var_found = true;
 			foreach ($lines as $line) {
 				if (stripos($line, $var_name) === false) continue;
 
@@ -186,15 +193,35 @@ class VarReAsset extends VarUndefined
 
 				$line_tokens = \Tokenizer::get_tokens_of_expression($line);
 				$var_cnt = 0;
-				foreach ($line_tokens as $token) {
+				$var_pos = 0;
+				foreach ($line_tokens as $j => $token) {
 					if (is_array($token) && $token[0] === 'T_VARIABLE' && $token[1] === $var_name) {
 						$var_cnt++;
+						$var_pos = $j;
 					}
 
 					if ($var_cnt > 1) break;
 				}
 
+				if ($var_cnt == 1 && $line_tokens[$var_pos+1] === '=') {
+					$is_first_var_found = false;
+					continue;
+				}
+
+				if ($var_cnt == 1 && $is_first_var_found) {
+					$is_first_var_found = false;
+					continue;
+				}
+
 				if ($var_cnt > 1) {
+					unset($this->suspicious_var[$i]);
+					break;
+				}
+
+				// проверяем на аргумент
+				if ($var_cnt === 1
+					&& \Tokenizer::token_ispos($line_tokens, false, 'T_STRING') !== false
+				) {
 					unset($this->suspicious_var[$i]);
 					break;
 				}

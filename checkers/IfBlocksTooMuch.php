@@ -8,8 +8,8 @@
 namespace Checkers;
 
 
-class IfBlocksTooMuch extends \Analisator\ParentChecker {
-
+class IfBlocksTooMuch //extends \Analisator\ParentChecker
+{
 	protected $types = array(
 		CHECKER_HEURISTIC
 	);

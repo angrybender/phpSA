@@ -4,7 +4,7 @@
  * @author k.vagin
  */
 
-protected function _smtp_connect()
+function _smtp_connect()
 {
 	$ssl = NULL;
 	if ($this->smtp_crypto == 'ssl')
