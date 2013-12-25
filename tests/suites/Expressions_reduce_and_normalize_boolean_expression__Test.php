@@ -41,7 +41,7 @@ class Expressions_reduce_and_normalize_boolean_expression extends PHPUnit_Framew
 			),
 			array(
 				'(($segMatcher=!$segMatcher)&&(preg_match(\'/(^|\])[^\[]*[\'.self::$possibleDateFormatCharacters.\']/i\',$subVal)))',
-				'($rvar_6&&$rvar_5)'
+				'($rvar_5&&$rvar_4)'
 			),
 			array(
 				'((!isset($p_options[PCLZIP_OPT_TEMP_FILE_OFF]))&&(isset($p_options[PCLZIP_OPT_TEMP_FILE_ON])||(isset($p_options[PCLZIP_OPT_TEMP_FILE_THRESHOLD])&&($p_options[PCLZIP_OPT_TEMP_FILE_THRESHOLD]<=$p_header[\'size\']))))',

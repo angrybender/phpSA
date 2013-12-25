@@ -1,9 +1,10 @@
 <?php
+
 /**
  *
  * @author k.vagin
  */
-protected function _remove_evil_attributes($str, $is_image)
+ function _remove_evil_attributes($str, $is_image)
 {
 	// All javascript event handlers (e.g. onload, onclick, onmouseover), style, and xmlns
 	$evil_attributes = array('on\w*', 'style', 'xmlns', 'formaction');

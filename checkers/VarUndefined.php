@@ -4,6 +4,7 @@
  * сложные переменные пропускает
  *
  * todo captcha_helper.php line 44
+ * todo когда вызываемая ф-ия принимает по ссылке (ложные срабатывания)
  * @author k.vagin
  */
 
@@ -35,6 +36,7 @@ class VarUndefined extends \Analisator\ParentChecker
 		'$_SESSION',
 		'$_ENV',
 		'$_COOKIE',
+		'$GLOBALS',
 		'$php_errormsg',
 		'$HTTP_RAW_POST_DATA',
 		'$http_response_header',
@@ -58,8 +60,16 @@ class VarUndefined extends \Analisator\ParentChecker
 		'fsockopen' => array(3,4),
 		'sqlite_open' => array(3),
 		'sqlite_popen' => array(3),
-		'preg_replace' => array(5)
+		'preg_replace' => array(5),
+		'openssl_sign' => array(2,3),
+		'pcntl_waitpid' => array(2),
+		'stream_socket_server' => array(2,3),
+		'stream_socket_client' => array(2,3),
+		'pcntl_wait' => array(1),
 	);
+
+	private $var_line = array(); // для ошибок пригодится позиция переменной
+	private $var_pos_cache = array(); // кэш позиций переменных
 
 	public function check($tokens)
 	{
@@ -81,7 +91,8 @@ class VarUndefined extends \Analisator\ParentChecker
 
 					$procedures[] = array(
 						'declaration' => $function_declaration,
-						'body' => $body
+						'body' => $body,
+						'name' => $tokens[$i+1][1]
 					);
 				}
 			}
@@ -104,17 +115,8 @@ class VarUndefined extends \Analisator\ParentChecker
 	 */
 	private function analize_code($tokens)
 	{
-		// если в теле функции есть вызов extract( - то тут ничего нельзя сказать, неопределенное поведение
-		if (\Tokenizer::token_find($tokens['body'], \Tokenizer::get_tokens_of_expression('extract(')) !== false) {
+		if ($this->is_undef_behavior($tokens)) {
 			return true;
-		}
-
-		// если в теле функции происходил инклуд - точно так же неопределенное поведение, т.к. внутри загружаемого файла могут инициализироваться переменные
-		// todo научиться раскрывать include
-		foreach ($this->includes as $sign) {
-			if (\Tokenizer::token_ispos($tokens['body'], false, $sign) !== false) {
-				return true;
-			}
 		}
 
 		$_args = \Variables::get_all_vars_in_expression($tokens['declaration']);
@@ -128,17 +130,116 @@ class VarUndefined extends \Analisator\ParentChecker
 		$variables = array_diff($variables, $this->predefined_vars);
 
 		// пропускаем переменные, которые получают значение от функций, будучи переданными как аргумент. пример: preg_match($regexp, $mime, $matches)
+		$callback_into_variable = $this->variables_assets_by_procedure($tokens['body']);
+		$variables = array_diff($variables, $callback_into_variable);
+
+		// пропускаем все, которые стоят слева от знака равенства (но только если не $a = $a; )
+		$variables = $this->variables_assets_by_eq($variables, $tokens['body']);
+
+
+		// пропускаем переданные по ссылке
+		$var_by_ref = array();
+		foreach ($this->var_pos_cache as $var_name => $var_pos) {
+			if (isset($tokens['body'][$var_pos-1])
+				&& $tokens['body'][$var_pos-1] === '&'
+			) {
+				$var_by_ref[] = $var_name;
+			}
+		}
+		$variables = array_diff($variables, $var_by_ref);
+
+		// игнорируем переменные, сразу инициализированные как массивы:
+		$var_by_array = array();
+		foreach ($this->var_pos_cache as $var_name => $var_pos) {
+			if (isset($tokens['body'][$var_pos+1])
+				&& $tokens['body'][$var_pos+1] === '['
+			) {
+				$var_by_array[] = $var_name;
+			}
+		}
+		$variables = array_diff($variables, $var_by_array);
+
+
+		// пропускаем все, которые определяются декларацией цикла
+		$variables = $this->variables_assets_by_foreach($variables, $tokens['body']);
+
+		// пропускаем все, которые глобальные или static:
+		$variables = array_diff($variables, $this->variables_global($tokens['body'], 'T_GLOBAL'));
+		$variables = array_diff($variables, $this->variables_global($tokens['body'], 'T_STATIC'));
+
+
+		// пропускаем все, которые внутри unset (лишние ложные срабатывания)
+		$unset_vars = $this->variables_as_args_of_instruction($variables, $tokens['body'], 'T_UNSET');
+		$variables = array_diff($variables, $unset_vars);
+
+		// пропускаем все, которые внутри catch()
+		$catch_vars = $this->variables_as_args_of_instruction($variables, $tokens['body'], 'T_CATCH');
+		$variables = array_diff($variables, $catch_vars);
+
+		// игнорируем внутри list()
+		$list_vars = $this->variables_as_args_of_instruction($variables, $tokens['body'], 'T_LIST');
+		$variables = array_diff($variables, $list_vars);
+
+		// игнорируем внутри isset
+		$isset_vars = $this->variables_as_args_of_instruction($variables, $tokens['body'], 'T_ISSET');
+		$variables = array_diff($variables, $isset_vars);
+
+		// игнорируем внутри декларации анонимнйо ф-ии (array_map(function($a, $b))
+		$lambda_vars = $this->variables_as_args_of_instruction($variables, $tokens['body'], 'T_FUNCTION');
+		$variables = array_diff($variables, $lambda_vars);
+
+		if (!empty($variables)) {
+			//print_r($variables);
+			//die();
+			foreach ($variables as $var_name) {
+				$this->line[] = $this->var_line[$var_name];
+			}
+		}
+	}
+
+	/**
+	 * проверка на невозможность дальнейшего анализа
+	 * @param array
+	 * @return bool
+	 */
+	private function is_undef_behavior(array $tokens)
+	{
+		// если в теле функции есть вызов extract( - то тут ничего нельзя сказать, неопределенное поведение
+		if (\Tokenizer::token_find($tokens['body'], \Tokenizer::get_tokens_of_expression('extract(')) !== false) {
+			return true;
+		}
+
+		// если в теле функции происходил инклуд - точно так же неопределенное поведение, т.к. внутри загружаемого файла могут инициализироваться переменные
+		// todo научиться раскрывать include
+		foreach ($this->includes as $sign) {
+			if (\Tokenizer::token_ispos($tokens['body'], false, $sign) !== false) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * переменные, которые получают значение от функций, будучи переданными как аргумент. пример: preg_match($regexp, $mime, $matches)
+	 * @param array
+	 * @return array
+	 */
+	private function variables_assets_by_procedure(array $_tokens)
+	{
 		$callback_into_variable = array();
 		foreach ($this->function_callback_into_variable as $func_name => $arr_func_arg_pos) {
-			$_tokens = $tokens['body'];
+			$__tokens = $_tokens;
 			while (true) {
-				$function_callback_into_variable_pos = \Tokenizer::token_ispos($_tokens, $func_name, 'T_STRING');
+				$function_callback_into_variable_pos = \Tokenizer::token_ispos($__tokens, $func_name, 'T_STRING');
 				if ($function_callback_into_variable_pos === false) {
 					break;
 				}
 
-				$_tokens = array_slice($_tokens, $function_callback_into_variable_pos+1);
-				$expression = \Tokenizer::find_full_first_expression($_tokens,'(', ')', true);
+				$__tokens = array_slice($__tokens, $function_callback_into_variable_pos+1);
+
+				$expression = \Tokenizer::find_full_first_expression($__tokens,'(', ')', true);
+
 				unset($expression[0]); // первая скобка
 
 				foreach ($arr_func_arg_pos as $func_arg_pos) {
@@ -150,44 +251,60 @@ class VarUndefined extends \Analisator\ParentChecker
 				}
 			}
 		}
-		$callback_into_variable = array_unique($callback_into_variable);
-		$variables = array_diff($variables, $callback_into_variable);
+		return array_unique($callback_into_variable);
+	}
 
-		// пропускаем переданные по ссылке
+	/**
+	 * которые стоят слева от знака равенства (но только если не $a = $a; )
+	 * @param array
+	 * @param array
+	 * @return array
+	 */
+	private function variables_assets_by_eq(array $variables, array $_tokens)
+	{
+		$tokens_cnt = count($_tokens);
 		foreach ($variables as $i => $var_name) {
-			if (\Tokenizer::token_find($tokens['body'], \Tokenizer::get_tokens_of_expression('&'.$var_name)) !== false) {
-				unset($variables[$i]);
+			$var_pos = \Tokenizer::token_find($_tokens, \Tokenizer::get_tokens_of_expression($var_name));
+			$this->var_pos_cache[$var_name] = $var_pos;
+			$this->var_line[$var_name] = $_tokens[$var_pos][2];
+
+			if ($var_pos < $tokens_cnt-1
+				&& is_array($_tokens[$var_pos+2])
+				&& $_tokens[$var_pos+2][0] === 'T_VARIABLE'
+				&& $_tokens[$var_pos+2][1] === $var_name
+			) {
+				continue;
 			}
-		}
 
-		// пропускаем все, которые стоят слева от знака равенства
-		$var_line = array(); // для ошибок пригодится позиция переменной
-		$var_pos_cache = array(); // кэш позиций переменных
-		$tokens_cnt = count($tokens['body']);
-		foreach ($variables as $i => $var_name) {
-			$var_pos = \Tokenizer::token_find($tokens['body'], \Tokenizer::get_tokens_of_expression($var_name));
-			$var_pos_cache[$var_name] = $var_pos;
-			$var_line[$var_name] = $tokens['body'][$var_pos][2];
-
-			if ($var_pos < $tokens_cnt && $tokens['body'][$var_pos+1] === '=') {
+			if ($var_pos < $tokens_cnt && $_tokens[$var_pos+1] === '=') {
 				// если следующий символ - равно
 				unset($variables[$i]);
 			}
 		}
 
-		// пропускаем все, которые определяются декларацией цикла
+		return $variables;
+	}
+
+	/**
+	 * определяются декларацией цикла
+	 * @param array $variables
+	 * @param array $_tokens
+	 * @return array
+	 */
+	private function variables_assets_by_foreach(array $variables, array $_tokens)
+	{
 		foreach ($variables as $i => $var_name) {
-			$var_pos = $var_pos_cache[$var_name];
+			$var_pos = $this->var_pos_cache[$var_name];
 
 			if ($var_pos > 1
-				&& is_array($tokens['body'][$var_pos-1])
-				&& $tokens['body'][$var_pos-1][0] === 'T_AS'
+				&& is_array($_tokens[$var_pos-1])
+				&& $_tokens[$var_pos-1][0] === 'T_AS'
 			) {
 				unset($variables[$i]);
 			}
 			elseif ($var_pos > 1
-				&& is_array($tokens['body'][$var_pos-1])
-				&& $tokens['body'][$var_pos-1][0] === 'T_DOUBLE_ARROW'
+				&& is_array($_tokens[$var_pos-1])
+				&& $_tokens[$var_pos-1][0] === 'T_DOUBLE_ARROW'
 			) {
 				// проверяем есть ли дальше переменная ,as и foreach:
 				$is_var_exist = false;
@@ -195,27 +312,27 @@ class VarUndefined extends \Analisator\ParentChecker
 				$is_foreach_exist = false;
 
 				for ($j = $var_pos; $j>=0; $j--) {
-					if ($tokens['body'][$j] === ';'
-						|| $tokens['body'][$j] === '}'
-						|| $tokens['body'][$j] === '{'
+					if ($_tokens[$j] === ';'
+						|| $_tokens[$j] === '}'
+						|| $_tokens[$j] === '{'
 					) {
 						break;
 					}
 
-					if (is_array($tokens['body'][$j])
-						&& $tokens['body'][$j][0] === 'T_VARIABLE'
+					if (is_array($_tokens[$j])
+						&& $_tokens[$j][0] === 'T_VARIABLE'
 					){
 						$is_var_exist = true;
 					}
 
-					if (is_array($tokens['body'][$j])
-						&& $tokens['body'][$j][0] === 'T_AS'
+					if (is_array($_tokens[$j])
+						&& $_tokens[$j][0] === 'T_AS'
 					){
 						$is_as_exist = true;
 					}
 
-					if (is_array($tokens['body'][$j])
-						&& $tokens['body'][$j][0] === 'T_FOREACH'
+					if (is_array($_tokens[$j])
+						&& $_tokens[$j][0] === 'T_FOREACH'
 					){
 						$is_foreach_exist = true;
 					}
@@ -227,22 +344,28 @@ class VarUndefined extends \Analisator\ParentChecker
 			}
 		}
 
-		// пропускаем все, которые глобальные или statis:
-		$_tokens = $tokens['body'];
+		return $variables;
+	}
+
+	/**
+	 * пропускаем все, которые глобальные или static
+	 * @param array
+	 * @param string	'T_GLOBAL' | 'T_STATIC'
+	 * @return array
+	 */
+	private function variables_global(array $_tokens, $type)
+	{
+		// global
 		$global_vars = array();
 		while (true) {
-			$global_def_pos = \Tokenizer::token_ispos($_tokens, false, 'T_GLOBAL');
-			if ($global_def_pos === false) {
-				$global_def_pos = \Tokenizer::token_ispos($_tokens, false, 'T_STATIC');
-			}
-
+			$global_def_pos = \Tokenizer::token_ispos($_tokens, false, $type);
 			if ($global_def_pos === false) {
 				break;
 			}
 
 			$_tokens = array_slice($_tokens, $global_def_pos+1);
 
-			foreach ($_tokens as $i => $token) {
+			foreach ($_tokens as $token) {
 				if (is_array($token) && $token[0] === 'T_VARIABLE') {
 					$global_vars[] = $token[1];
 					continue;
@@ -255,87 +378,47 @@ class VarUndefined extends \Analisator\ParentChecker
 				break; // вот такая загогулина
 			}
 		}
-		$variables = array_diff($variables, $global_vars);
+		return array_unique($global_vars);
+	}
 
-		// пропускаем все, которые внутри unset (лишние ложные срабатывания)
-		$_tokens = $tokens['body'];
-		$unset_vars = array();
+	/**
+	 * переменные, которые являются всеми агрументами данной инструкции языка (isset, catch, list)
+	 * @param array $variables
+	 * @param array $_tokens
+	 * @param string $type
+	 * @return array
+	 */
+	private function variables_as_args_of_instruction(array $variables, array $_tokens, $type)
+	{
+		$_vars = array();
 		while (true) {
-			$unset_pos = \Tokenizer::token_ispos($_tokens, false, 'T_UNSET');
+			$_pos = \Tokenizer::token_ispos($_tokens, false, $type);
 
-			if ($unset_pos === false) {
+			if ($_pos === false) {
 				break;
 			}
 
-			$_tokens = array_slice($_tokens, $global_def_pos+1);
+			$_tokens = array_slice($_tokens, $_pos+1);
 
 			foreach ($_tokens as $i => $token) {
-				if (is_array($token) && $token[0] === 'T_VARIABLE') {
-					$unset_vars[] = $token[1];
+				if (is_array($token)
+					&& $token[0] === 'T_VARIABLE'
+					&& (
+						($_tokens[$i+1] === ')' || $_tokens[$i+1] === ',' || $_tokens[$i+1] === ';' || $_tokens[$i+1] === '}') // проверяем чтобы дальше не было -> или ::
+						||
+						!isset($_tokens[$i+1])
+					)
+				) {
+					$_vars[] = $token[1];
 				}
 
-				if ($token === ')' || $token === ';') {
+				if ($token === ')' || $token === ';' || $token === '{') {
 					break;
 				}
 			}
 		}
-		$variables = array_diff($variables, $unset_vars);
 
-		// пропускаем все, которые внутри catch()
-		$_tokens = $tokens['body'];
-		$catch_vars = array();
-		while (true) {
-			$catch_pos = \Tokenizer::token_ispos($_tokens, false, 'T_CATCH');
-
-			if ($catch_pos === false) {
-				break;
-			}
-
-			$_tokens = array_slice($_tokens, $catch_pos+1);
-
-			foreach ($_tokens as $i => $token) {
-				if (is_array($token) && $token[0] === 'T_VARIABLE') {
-					$catch_vars[] = $token[1];
-				}
-
-				if ($token === ')' || $token === '{') {
-					break;
-				}
-			}
-		}
-		$variables = array_diff($variables, $catch_vars);
-
-		// игнорируем переменные, сразу инициализированные как массивы:
-		foreach ($variables as $i => $var_name) {
-			if (\Tokenizer::token_find($tokens['body'], \Tokenizer::get_tokens_of_expression($var_name.'[')) !== false) {
-				unset($variables[$i]);
-			}
-		}
-
-		// игнорируем внутри list()
-		$_tokens = $tokens['body'];
-		$list_vars = array();
-		while (true) {
-			$list_pos = \Tokenizer::token_ispos($_tokens, false, 'T_LIST');
-			if ($list_pos === false) {
-				break;
-			}
-
-			$_tokens = array_slice($_tokens, $list_pos+1);
-
-			$expression = \Tokenizer::find_full_first_expression($_tokens, '(', ')', true);
-			$list_vars = array_merge($list_vars, \Variables::get_all_vars_in_expression($expression));
-		}
-		$list_vars = array_unique($list_vars);
-		$variables = array_diff($variables, $list_vars);
-
-		if (!empty($variables)) {
-			//print_r($variables);
-			//die();
-			foreach ($variables as $var_name) {
-				$this->line[] = $var_line[$var_name];
-			}
-		}
+		return array_unique($_vars);
 	}
 
 	/**

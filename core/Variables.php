@@ -36,6 +36,14 @@ class Variables {
 					continue;
 				}
 
+				if ( // обращение к статической переменной класса
+					isset($tokens[$i-1])
+					&& is_array($tokens[$i-1])
+					&& $tokens[$i-1][0] === 'T_DOUBLE_COLON'
+				) {
+					continue;
+				}
+
 				if (// $sometime:: это будет выражение
 					isset($tokens[$i+1])
 					&& is_array($tokens[$i+1])
