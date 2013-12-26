@@ -19,8 +19,19 @@ include 'core/Procedures.php';
 include 'core/Expressions.php';
 include 'core/Variables.php';
 
-include 'extractors/Procedure.php';
-include 'extractors/Conditions.php';
-include 'extractors/Full.php';
-include 'extractors/CalledFunction.php';
-include 'extractors/Blocks.php';
+spl_autoload_register(function($class)
+{
+	$ar_name = explode('\\',$class);
+
+	if (count($ar_name) !== 2) return true;
+
+	// дозагрузка чекеров, срабатывает когда один чекер наследуется от другого
+	if ($ar_name[0] === 'Checkers') {
+		include_once 'checkers/' . $ar_name[1] . '.php';
+	}
+
+	// загрузка извлекателей
+	if ($ar_name[0] === 'Extractors') {
+		include_once 'extractors/' . $ar_name[1] . '.php';
+	}
+});
