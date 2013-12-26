@@ -12,7 +12,17 @@ class Suite {
 	private $project_path = '';
 	private $project_files = array();
 	private $checkers = array(); // массивы чекеров
+
+	/**
+	 * @var Report
+	 */
 	private $reporter = null; // ссылка на объект
+
+	/**
+	 * @var Config
+	 */
+	private $config = null; // ссылка на объект
+
 
 	private $_tick_cnt = 0;
 
@@ -56,7 +66,8 @@ class Suite {
 	 */
 	private function load_config()
 	{
-		Config::getInstance()->load();
+		$this->config = Config::getInstance();
+		$this->config->load();
 	}
 
 	public function __construct()
@@ -126,7 +137,7 @@ class Suite {
 	{
 		$classes = get_declared_classes();
 		foreach ($classes as $class) {
-			if (is_subclass_of($class, "Analisator\\ParentChecker")) {
+			if (is_subclass_of($class, "Analisator\\ParentChecker") && $this->config->is_checker_enable($class)) {
 				$this->checkers[] = $class;
 			}
 		}
