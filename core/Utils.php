@@ -13,7 +13,7 @@ class Utils {
 	public static function get_all_variables($count=0)
 	{
 		if ($count>=10) {
-			die('FUCK' . PHP_EOL); // wtf
+			throw new \Exception("слишком большое число переменных");
 		}
 
 		$variants = pow(2, $count);

@@ -15,6 +15,7 @@ include 'analisator/Config.php';
 include 'analisator/Suite.php';
 
 include 'core/Utils.php';
+include 'core/Heuristic.php';
 include 'core/Tokenizer.php';
 include 'core/Procedures.php';
 include 'core/Expressions.php';
