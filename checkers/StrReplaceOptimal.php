@@ -99,7 +99,7 @@ class StrReplaceOptimal extends \Analisator\ParentChecker
 				$str_var = $curr_var;
 
 				if (!$is_eq) { // легкая оптимизация...
-					//break;
+					break;
 				}
 			}
 
