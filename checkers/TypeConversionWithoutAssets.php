@@ -36,13 +36,18 @@ class TypeConversionWithoutAssets extends \Analisator\ParentChecker
 	);
 
 	private $token_end = array(
-		'T_OPEN_TAG',
-		'T_COMMENT',
-		'T_DOC_COMMENT'
+		'T_OPEN_TAG'
 	);
 
 	public function check($tokens)
 	{
+		foreach ($tokens as $i => $token) {
+			if (is_array($token) && ($token[0] === 'T_COMMENT' || $token[0] === 'T_DOC_COMMENT')) {
+				unset($tokens[$i]);
+			}
+		}
+		$tokens = array_values($tokens);
+
 		foreach ($tokens as $i => $token) {
 			if (is_array($token)
 				&& in_array($token[0], $this->casts)
