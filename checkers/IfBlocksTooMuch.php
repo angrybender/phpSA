@@ -14,7 +14,7 @@ class IfBlocksTooMuch extends \Analisator\ParentChecker
 		CHECKER_HEURISTIC
 	);
 
-	protected $error_message = 'Слишком больше количество вложенных If';
+	protected $error_message = 'Слишком большое количество вложенных If';
 
 	protected $extractor = 'Blocks'; // класс-извлекатель нужных блоков
 	protected $filter = array(
@@ -54,9 +54,7 @@ class IfBlocksTooMuch extends \Analisator\ParentChecker
 	private function recursive_if_counter($code, $last_count)
 	{
 		$if_extractor = new \Extractors\Blocks($code);
-		$ifs = $if_extractor->extract(array(
-			'block' => 'T_IF'
-		));
+		$ifs = $if_extractor->extract($this->filter);
 
 		$count = 0;
 		foreach ($ifs as $if) {
