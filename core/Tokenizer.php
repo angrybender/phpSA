@@ -448,4 +448,96 @@ class Tokenizer {
 		return strtolower(self::tokens_to_source($result_tokens));
 	}
 
+	/**
+	 * @param array $tokens
+	 * @return array
+	 */
+	public static function remove_comments(array $tokens)
+	{
+		return self::remove_token_by_type($tokens, array('T_COMMENT', 'T_DOC_COMMENT'));
+	}
+
+	/**
+	 * @param array $tokens
+	 * @param array|string $exclude_tokens
+	 * @return array
+	 */
+	public static function remove_token_by_type(array $tokens, $exclude_tokens)
+	{
+		if (is_scalar($exclude_tokens)) {
+			foreach ($tokens as $i => $token) {
+				if (is_array($token) && $token === $exclude_tokens) {
+					unset($tokens[$i]);
+				}
+			}
+		}
+		elseif (count($exclude_tokens) === 2) {
+			foreach ($tokens as $i => $token) {
+				// надеюсь это оптимизация а не глюк
+				if (is_array($token) && ($token[0] === $exclude_tokens[0] || $token[0] === $exclude_tokens[1])) {
+					unset($tokens[$i]);
+				}
+			}
+		}
+		else {
+			foreach ($tokens as $i => $token) {
+				if (is_array($token) && in_array($token[0], $exclude_tokens)) {
+					unset($tokens[$i]);
+				}
+			}
+		}
+
+		return array_values($tokens);
+	}
+
+	public static function tokens_is_eq($token1, $token2, $strong = false)
+	{
+		if (is_array($token1) && is_array($token2)) {
+			$type_eq = ($token1[0] === $token2[0]);
+			if  (!$strong) {
+				return true;
+			}
+
+			return ($token1[1] === $token2[1]);
+		}
+
+		if (!is_array($token1) && !is_array($token2)) {
+			return ($token1 === $token2);
+		}
+
+		return false;
+	}
+
+	/**
+	 * типа str_ireplace($foo, ''); только может целые конструкции херить
+	 *
+	 * @param array $tokens
+	 * @param array $exclude_tokens
+	 * @return array
+	 */
+	public static function remove_token_by_token(array $tokens, array $exclude_tokens)
+	{
+		$replace_count = count($exclude_tokens);
+
+		foreach ($tokens as $i => $token)
+		{
+			if (empty($token)) {
+				continue;
+			}
+
+			$is_eq = true;
+			foreach ($exclude_tokens as $j => $exclude_token) {
+				$is_eq = $is_eq && self::tokens_is_eq($tokens[$i+$j], $exclude_token);
+				if (!$is_eq) break;
+			}
+
+			if ($is_eq) {
+				for ($k=$i; $k<=$replace_count; $k++) {
+					$tokens[$k] = null;
+				}
+			}
+		}
+
+		return $tokens;
+	}
 } 
