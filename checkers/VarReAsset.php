@@ -64,6 +64,20 @@ class VarReAsset extends VarUndefined
 		// индекс переменных:
 		$this->build_variables_index($variables, $tokens['body']);
 
+		// игнорируем переменные, сразу инициализированные как массивы:
+		$var_by_array = array();
+		foreach ($this->variables_index as $var_name => $arr_var_pos) {
+			foreach ($arr_var_pos as $var_pos) {
+				if (isset($tokens['body'][$var_pos+1])
+					&& $tokens['body'][$var_pos+1] === '['
+				) {
+					$var_by_array[] = $var_name;
+					break;
+				}
+			}
+		}
+		$variables = array_diff($variables, $var_by_array);
+
 		// пропускаем все, которые встречаются 1 раз
 		foreach ($variables as $i => $var_name) {
 			if (count($this->variables_index[$var_name]) < 2) {

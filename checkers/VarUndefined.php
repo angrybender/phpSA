@@ -56,6 +56,7 @@ class VarUndefined extends \Analisator\ParentChecker
 		'preg_match' => array(3),
 		'preg_match_all' => array(3),
 		'fsockopen' => array(3,4),
+		'xml_parse_into_struct' => array(3,4),
 		'sqlite_open' => array(3),
 		'sqlite_popen' => array(3),
 		'preg_replace' => array(5),
@@ -63,10 +64,13 @@ class VarUndefined extends \Analisator\ParentChecker
 		'pcntl_waitpid' => array(2),
 		'stream_socket_server' => array(2,3),
 		'stream_socket_client' => array(2,3),
+		'socket_getsockname' => array(2,3),
 		'pcntl_wait' => array(1),
+		'parse_str' => array(2),
+		'getimagesize' => array(2),
 	);
 
-	// такие функции, которые некоторый результат пишут в переданную им переменную, но принимают бесконечное кол-во аргументов по ссылке
+	// такие функции, которые результат пишут в переданную им переменную, но принимают бесконечное кол-во аргументов по ссылке
 	private $function_callback_into_variable_infinity = array(
 		'sscanf' => 3, // с третьего аргумента и дальше
 	);

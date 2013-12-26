@@ -13,29 +13,10 @@ class PreDefinedInSqlQuery_mock extends \Checkers\PreDefinedInSqlQuery {
 	}
 }
 
-class Checker_TypeConversionWithoutAssets extends CheckerSkeleton
+class Checker_PreDefinedInSqlQuery extends CheckerSkeleton
 {
 	protected $base_path = 'data/checker_pre_defined_in_sql_query/';
+	protected $mock_class_name = 'PreDefinedInSqlQuery_mock';
+	protected $is_need_token_convert = true;
 
-	/**
-	 * @dataProvider provider_good
-	 */
-	public function test_ConditionsOptimal_good($code)
-	{
-		$checker = new PreDefinedInSqlQuery_mock('');
-		$result = $checker->check(\Tokenizer::get_tokens($code));
-
-		$this->assertEquals(true, $result);
-	}
-
-	/**
-	 * @dataProvider provider_bag
-	 */
-	public function test_ConditionsOptimal_bad($code)
-	{
-		$checker = new PreDefinedInSqlQuery_mock('');
-		$result = $checker->check(\Tokenizer::get_tokens($code));
-
-		$this->assertEquals(false, $result);
-	}
 } 

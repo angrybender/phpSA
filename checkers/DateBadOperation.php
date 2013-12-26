@@ -19,11 +19,9 @@ class DateBadOperation extends \Analisator\ParentChecker
 
 	private $suspicious_date_functions = array(
 		'date',
-		'time',
 		'mktime',
 		'gmmktime',
-		'strtotime',
-		'timestamp'
+		'strtotime'
 	);
 
 	private $suspicious_string_functions = array(
