@@ -10,7 +10,7 @@ namespace Analisator;
 class Report {
 	/**
 	 * object instance
-	 * @var Singleton
+	 * @var Report
 	 */
 	protected static $instance = array();
 

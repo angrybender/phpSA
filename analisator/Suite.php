@@ -51,8 +51,18 @@ class Suite {
 		}
 	}
 
+	/**
+	 * обработка конфига
+	 */
+	private function load_config()
+	{
+		Config::getInstance()->load();
+	}
+
 	public function __construct()
 	{
+		$this->load_config();
+
 		$this->include_all();
 
 		$this->reporter = Report::getInstance();
