@@ -6,6 +6,8 @@
 	..
 	$var = 456; // зачем дважды?
  *
+ * из за большого количества ложных срабатываний оставил обработку только самых кондовых случаев
+ *
  * @author k.vagin
  */
 
@@ -21,8 +23,8 @@ class VarReAsset extends VarUndefined
 	protected $error_message = 'Переменная переобозначается ниже, а до этого не используется';
 
 	protected $variables_index = array();
-	protected $variables_reverse_index = array();
 	private $suspicious_var = array();
+
 
 	private $block_head = array(
 		'T_IF',
@@ -44,6 +46,9 @@ class VarReAsset extends VarUndefined
 	 */
 	protected function analize_code($tokens)
 	{
+		$this->variables_index = array();
+		$this->suspicious_var = array();
+
 		$_args = \Variables::get_all_vars_in_expression($tokens['declaration']);
 
 		$variables = \Variables::get_all_vars_in_expression($tokens['body']);
@@ -72,9 +77,6 @@ class VarReAsset extends VarUndefined
 		foreach ($variables as $i => $var_name) {
 			$this->process_var($var_name, $tokens['body']);
 		}
-
-		// пост фильтрация:
-		$this->post_checked($tokens['body']);
 
 		foreach ($this->suspicious_var as $var_name) {
 			$this->line[] = @$tokens['body'][$this->variables_index[$var_name][0]][2];
@@ -132,7 +134,6 @@ class VarReAsset extends VarUndefined
 				$var_pos = $var_pos + $prev_pos;
 
 				$this->variables_index[$var_name][] = $var_pos;
-				$this->variables_reverse_index[$var_pos] = $var_name;
 
 				$prev_pos = $var_pos + 1;
 			}
@@ -146,6 +147,7 @@ class VarReAsset extends VarUndefined
 	 */
 	protected function process_var($var_name, array $tokens)
 	{
+		$code_length = count($tokens);
 		foreach ($this->variables_index[$var_name] as $i => $var_position) {
 			if (!isset($this->variables_index[$var_name][$i+1])) break;
 
@@ -158,74 +160,32 @@ class VarReAsset extends VarUndefined
 				break;
 			}
 
+			$is_suspicious = false;
 			if ($tokens[$curr_pos+1] === '='
 				&& $tokens[$next_pos+1] === '='
 			) {
+				$is_suspicious = true;
+			}
+
+			// если в первом присваинвании нет вызова ф-ии то ок
+			for ($j = $next_pos+1; $j <= $code_length - 1; $j++) {
+				if ($tokens[$j] === ';' || $tokens[$j] === '}') {
+					break;
+				}
+
+				if (is_array($tokens[$j])
+					&& $tokens[$j][0] === 'T_STRING'
+					&& $tokens[$j+1] === '('
+				) {
+					$is_suspicious = false;
+					break;
+				}
+			}
+
+			if ($is_suspicious) {
 				$this->suspicious_var[] = $var_name;
 			}
 		}
 
-	}
-
-	/**
-	 * допроверка
-	 * @param array $tokens
-	 * @return int
-	 */
-	private function post_checked(array $tokens)
-	{
-		if (empty($this->suspicious_var)) {
-			return 0;
-		}
-
-		$lines = \Tokenizer::format_code_into_lines($tokens);
-		$lines = array_filter($lines, function($val) // оптимизируем, выбрасывая строки, которые заведомо не будем обрабатывать
-		{
-			return (strpos($val, '$') !== false);
-		});
-
-		foreach ($this->suspicious_var as $i => $var_name) {
-			$is_first_var_found = true;
-			foreach ($lines as $line) {
-				if (stripos($line, $var_name) === false) continue;
-
-				if ($line === "{$var_name}={$var_name}") break;
-
-				$line_tokens = \Tokenizer::get_tokens_of_expression($line);
-				$var_cnt = 0;
-				$var_pos = 0;
-				foreach ($line_tokens as $j => $token) {
-					if (is_array($token) && $token[0] === 'T_VARIABLE' && $token[1] === $var_name) {
-						$var_cnt++;
-						$var_pos = $j;
-					}
-
-					if ($var_cnt > 1) break;
-				}
-
-				if ($var_cnt == 1 && $line_tokens[$var_pos+1] === '=') {
-					$is_first_var_found = false;
-					continue;
-				}
-
-				if ($var_cnt == 1 && $is_first_var_found) {
-					$is_first_var_found = false;
-					continue;
-				}
-
-				if ($var_cnt > 1) {
-					unset($this->suspicious_var[$i]);
-					break;
-				}
-
-				// проверяем на аргумент
-				if ($var_cnt === 1
-					&& \Tokenizer::token_ispos($line_tokens, false, 'T_STRING') !== false
-				) {
-					unset($this->suspicious_var[$i]);
-					break;
-				}
-			}
-		}
 	}
 } 

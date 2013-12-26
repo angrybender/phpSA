@@ -66,6 +66,11 @@ class VarUndefined extends \Analisator\ParentChecker
 		'pcntl_wait' => array(1),
 	);
 
+	// такие функции, которые некоторый результат пишут в переданную им переменную, но принимают бесконечное кол-во аргументов по ссылке
+	private $function_callback_into_variable_infinity = array(
+		'sscanf' => 3, // с третьего аргумента и дальше
+	);
+
 	private $var_line = array(); // для ошибок пригодится позиция переменной
 	private $var_pos_cache = array(); // кэш позиций переменных
 
@@ -114,6 +119,9 @@ class VarUndefined extends \Analisator\ParentChecker
 		if ($this->is_undef_behavior($tokens)) {
 			return true;
 		}
+
+		$this->var_line = array();
+		$this->var_pos_cache = array();
 
 		$_args = \Variables::get_all_vars_in_expression($tokens['declaration']);
 
@@ -247,6 +255,36 @@ class VarUndefined extends \Analisator\ParentChecker
 				}
 			}
 		}
+
+		foreach ($this->function_callback_into_variable_infinity as $func_name => $func_arg_start_pos) {
+			$__tokens = $_tokens;
+			while (true) {
+				$function_callback_into_variable_pos = \Tokenizer::token_ispos($__tokens, $func_name, 'T_STRING');
+				if ($function_callback_into_variable_pos === false) {
+					break;
+				}
+
+				$__tokens = array_slice($__tokens, $function_callback_into_variable_pos+1);
+
+				$expression = \Tokenizer::find_full_first_expression($__tokens,'(', ')', true);
+
+				unset($expression[0]); // первая скобка
+
+				$_func_arg_start_pos = $func_arg_start_pos;
+				while (true) {
+					$var_name = $this->extract_need_arg($expression, $_func_arg_start_pos);
+
+					if (!empty($var_name)) {
+						$callback_into_variable[] = $var_name;
+						$_func_arg_start_pos++;
+					}
+					else {
+						break;
+					}
+				}
+			}
+		}
+
 		return array_unique($callback_into_variable);
 	}
 
