@@ -6,7 +6,7 @@
 
 include __DIR__ . '/../../bootstrap.php';
 
-class Heuristic_mock extends \Heuristic {
+class Heuristic_mock extends \CopyPaste {
 	public static function wrap_one_line_blocks_pub($tokens)
 	{
 		return self::wrap_one_line_blocks($tokens);
@@ -29,9 +29,34 @@ class Heuristic_wrap_one_line extends PHPUnit_Framework_TestCase
 		return array(
 			array(
 				'
-					if (true) echo "a";
+					if ((int)true) echo "a";
 				',
-				'if(true){echo"a";}'
+				'if((int)true){echo"a";}'
+			),
+			array(
+				'
+					if (true) echo "a"; else echo "b";
+				',
+				'if(true){echo"a";}else{echo"b";}'
+			),
+			array(
+				'
+					if (true)
+						echo "a";
+					else {
+						echo "b";
+					}
+				',
+				'if(true){echo"a";}else{echo"b";}'
+			),
+			array(
+				'
+					if (true)
+						echo "a";
+					elseif (false)
+						echo "b";
+				',
+				'if(true){echo"a";}elseif(false){echo"b";}'
 			),
 			array(
 				'
@@ -46,6 +71,10 @@ class Heuristic_wrap_one_line extends PHPUnit_Framework_TestCase
 				',
 				'if(true){if(false){echo"b";}}'
 			),
+			array(
+				'if(true){if(false){echo"b";}}',
+				'if(true){if(false){echo"b";}}'
+			)
 		);
 	}
 } 
