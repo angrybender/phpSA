@@ -120,7 +120,10 @@ class CopyPaste {
 				$is_open_block = true;
 				$new_tokens[] = '{';
 			}
-			elseif ($brackets === 0 && $token === ')' && $block_start>0) {
+			elseif ($brackets === 0
+				&& $token === ')'
+				&& $block_start>0
+			) {
 				$block_start--;
 			}
 

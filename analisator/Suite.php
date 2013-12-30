@@ -12,6 +12,7 @@ class Suite {
 	private $project_path = '';
 	private $project_files = array();
 	private $checkers = array(); // массивы чекеров
+	private $workers = array(); // массив объектов воркеров
 
 	/**
 	 * @var Report
@@ -53,7 +54,8 @@ class Suite {
 	{
 		// todo in config
 		$paths = array(
-			'checkers/'
+			'checkers/',
+			'workers/'
 		);
 
 		foreach ($paths as $path) {
@@ -148,6 +150,19 @@ class Suite {
 	}
 
 	/**
+	 * кэширует в проперти все доступные воркеры
+	 */
+	private function collect_workers()
+	{
+		$classes = get_declared_classes();
+		foreach ($classes as $class) {
+			if (is_subclass_of($class, "Analisator\\ParentWorker")) {
+				$this->workers[] = new $class;
+			}
+		}
+	}
+
+	/**
 	 * анализ файла
 	 * @param $file_path
 	 */
@@ -168,6 +183,26 @@ class Suite {
 		}
 		catch (\Exception $e) {
 			$this->print_result(true);
+		}
+	}
+
+	/**
+	 * действия, которые надо выполнить над каждым файлом перед стартом
+	 * @param $file_path
+	 */
+	protected function pre_run($file_path)
+	{
+		//file_put_contents('log.txt', $file_path.PHP_EOL, FILE_APPEND);
+
+		$code = file_get_contents($file_path);
+
+		try {
+			foreach ($this->workers as $worker) {
+				$worker->work($code);
+			}
+		}
+		catch (\Exception $e) {
+			die('Worker error: ' . $e->getMessage(). ", file: " . $file_path); // todo maybe exception
 		}
 	}
 
@@ -216,8 +251,15 @@ class Suite {
 	 */
 	protected function project_files_iterator()
 	{
+		// воркеры и тд
+		echo "Start workers...", PHP_EOL;
+		foreach ($this->project_files as $file) {
+			$this->pre_run($file['path']);
+		}
+
 		error_reporting(E_ERROR);
 
+		// анализаторы
 		foreach ($this->project_files as $file) {
 			$this->reporter->reportFile($file['path']);
 			$this->run($file['path']);
@@ -231,7 +273,9 @@ class Suite {
 	public function start()
 	{
 		$this->collect_project_files($this->project_path);
+
 		$this->collect_checkers();
+		$this->collect_workers();
 
 		$this->project_files_iterator();
 
