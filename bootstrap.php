@@ -11,6 +11,7 @@ include 'analisator/def.types_of_checkers.php';
 include 'analisator/ParentChecker.php';
 include 'analisator/ParentExtractor.php';
 include 'analisator/ParentWorker.php';
+include 'analisator/ParentHook.php';
 
 include 'analisator/Report.php';
 include 'analisator/Config.php';

@@ -12,7 +12,7 @@ class ClassInformation extends \Analisator\ParentWorker {
 	/**
 	 * @var array
 	 */
-	private $class_and_his_methods = array();
+	public $class_and_his_methods = array();
 
 	public function work($source_code)
 	{
@@ -33,6 +33,7 @@ class ClassInformation extends \Analisator\ParentWorker {
 	private function extract_function_with_declarations($class_body_tokens)
 	{
 		// нам нужно извлечь переданные переменные, поэтому стандартный извлекатель не подходит
+		// todo дублирование
 		$procedures = array();
 		foreach ($class_body_tokens as $i => $token) {
 			if (is_array($token)
@@ -54,7 +55,7 @@ class ClassInformation extends \Analisator\ParentWorker {
 			}
 		}
 
-		unset($class_body_tokens);
+		$class_body_tokens = null;
 
 		// переформатирование деклараций в структуру инфы о аргументах
 		foreach ($procedures as $j => $procedure) {
@@ -87,3 +88,42 @@ class ClassInformation extends \Analisator\ParentWorker {
 		return $procedures;
 	}
 }
+
+/**
+ * пример вывода:
+ *
+Array
+(
+  Array
+ (
+	[name] => CI_Output
+	[methods] => Array
+	(
+		[0] => Array
+
+			[name] => __construct
+			[args] => Array	// аргументов нет
+			(
+			)
+
+		[2] => Array
+
+			[name] => set_output
+			[args] => Array
+			(
+				[0] => BY_VAL //  единственный аргумент передается по значению
+			)
+
+		[12] => Array
+
+			[name] => _display_cache
+			[args] => Array
+			(
+				[0] => BY_LINK
+				[1] => BY_LINK	// второй аргумент передается по ссылке
+			)
+	)
+
+))
+
+ */

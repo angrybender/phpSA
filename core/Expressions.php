@@ -394,4 +394,39 @@ class Expressions {
 
 		return eval($vars_declare . 'return ' . $expression);
 	}
+
+	/**
+	 * извлекает все аргументы из выражения, считая что это список аргументов
+	 * @param array
+	 * @return array
+	 */
+	public static function extract_all_args(array $tokens)
+	{
+		$brackets_cnt = 0;
+		$comma_positions = array(-1);
+		foreach ($tokens as $i => $token) {
+
+			if ($token === '(') {
+				$brackets_cnt++;
+			}
+
+			if ($token === ')') {
+				$brackets_cnt--;
+			}
+
+			if ($token === ',' && $brackets_cnt==0) {
+				$comma_positions[] = $i;
+			}
+		}
+		$comma_positions[] = count($tokens);
+
+		$result_tokens = array();
+		foreach ($comma_positions as $i => $position) {
+			if (!isset($comma_positions[$i+1])) break;
+
+			$result_tokens[] = \Tokenizer::tokens_to_source(array_slice($tokens, $position+1, $comma_positions[$i+1] - $position - 1));
+		}
+
+		return $result_tokens;
+	}
 } 

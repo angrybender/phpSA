@@ -4,7 +4,8 @@
  * сложные переменные пропускает
  *
  * todo captcha_helper.php line 44
- * todo когда вызываемая ф-ия принимает по ссылке (ложные срабатывания)
+ * todo когда вызываемая ф-ия принимает по ссылке (ложные срабатывания) - раскрывать имя класса
+ * todo когда вызываемая ф-ия принимает по ссылке (ложные срабатывания) - глобальные функции
  * @author k.vagin
  */
 
@@ -196,6 +197,10 @@ class VarUndefined extends \Analisator\ParentChecker
 		$lambda_vars = $this->variables_as_args_of_instruction($variables, $tokens['body'], 'T_FUNCTION');
 		$variables = array_diff($variables, $lambda_vars);
 
+		// быстрая проверка на передачу переменных по ссылке методам классов проекта
+		$by_ref = $this->check_by_ref_into_project($tokens['body']);
+		$variables = array_diff($variables, $by_ref);
+
 		if (!empty($variables)) {
 			//print_r($variables);
 			//die();
@@ -203,6 +208,50 @@ class VarUndefined extends \Analisator\ParentChecker
 				$this->line[] = $this->var_line[$var_name];
 			}
 		}
+	}
+
+	/**
+	 * быстрая проверка на передачу переменных по ссылке методам классов проекта
+	 * для скорости проверка идет только по имени функции
+	 */
+	private function check_by_ref_into_project(array $tokens)
+	{
+		$variables = array();
+		foreach ($tokens as $i => $token) {
+
+			if ($i === 0) continue;
+
+			if (is_array($token)
+				&& is_array($tokens[$i-1])
+				&& ($tokens[$i-1][0] === 'T_OBJECT_OPERATOR' || $tokens[$i-1][0] === 'T_DOUBLE_COLON') // конструкция вида ...->method($a,...)...
+				&& $token[0] === 'T_STRING'
+				&& isset($tokens[$i+1])
+				&& $tokens[$i+1] === '('
+				&& isset($tokens[$i+2])
+				&& $tokens[$i+2] !== ')' // скобка закрывается не сразу - есть хотя бы 1 аргумент
+			) {
+				$methods = \Hooks\IndexerClassInformation::$instance->find_all_methods($token[1], false);
+
+				if ($methods === false) continue;
+
+				$__tokens = array_slice($tokens, $i+1);
+				$__tokens = \Tokenizer::find_full_first_expression($__tokens, '(', ')', true);
+				$__tokens = array_slice($__tokens, 1, -1);
+
+				foreach ($methods as $method) {
+					$this_args = \Expressions::extract_all_args($__tokens);
+					if (count($this_args) > count($method['args'])) continue;
+
+					foreach ($method['args'] as $i => $type) {
+						if ($type === 'BY_LINK') {
+							$variables[] = $this_args[$i];
+						}
+					}
+				}
+			}
+		}
+
+		return $variables;
 	}
 
 	/**

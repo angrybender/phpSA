@@ -4,8 +4,25 @@
  * @author k.vagin
  */
 
-include __DIR__ . '/../../bootstrap.php';
-include __DIR__ . '/../../checkers/VarUndefined.php';
+
+include __DIR__ . '/../CheckerSkeleton.php';
+
+include __DIR__ . '/../../workers/ClassInformation.php';
+include __DIR__ . '/../../hooks/IndexerClassInformation.php';
+
+$worker = new \Workers\ClassInformation();
+$worker->class_and_his_methods = array(array(
+	'name' => 'MyClass',
+	'methods' => array(
+		array(
+			'name' => 'function_with_ref_call',
+			'args' => array('BY_LINK')
+		),
+	))
+);
+
+$hook = new \Hooks\IndexerClassInformation();
+$hook->run();
 
 class VarUndefined_mock extends \Checkers\VarUndefined {
 	public function __construct($source_code)
@@ -14,56 +31,9 @@ class VarUndefined_mock extends \Checkers\VarUndefined {
 	}
 }
 
-class Checker_VarUndefined extends PHPUnit_Framework_TestCase
+class Checker_VarUndefined extends CheckerSkeleton
 {
-	private $base_path = 'data/checker_var_undefined/';
-
-	/**
-	 * @dataProvider provider_good
-	 */
-	public function test_good($code)
-	{
-		$checker = new VarUndefined_mock('');
-		$result = $checker->check(\Tokenizer::get_tokens($code));
-
-		$this->assertEquals(true, $result);
-	}
-
-	public function provider_good()
-	{
-		$files = scandir($this->base_path.'good/');
-		$result = array();
-		foreach ($files as $file) {
-			if ($file !== '.' && $file !== '..') {
-				$result[] = array(file_get_contents($this->base_path . 'good/' . $file));
-			}
-		}
-
-		return $result;
-	}
-
-
-	/**
-	 * @dataProvider provider_bag
-	 */
-	public function test_bad($code)
-	{
-		$checker = new VarUndefined_mock('');
-		$result = $checker->check(\Tokenizer::get_tokens($code));
-
-		$this->assertEquals(false, $result);
-	}
-
-	public function provider_bag()
-	{
-		$files = scandir($this->base_path . 'bad/');
-		$result = array();
-		foreach ($files as $file) {
-			if ($file !== '.' && $file !== '..') {
-				$result[] = array(file_get_contents($this->base_path . 'bad/' . $file));
-			}
-		}
-
-		return $result;
-	}
+	protected $base_path = 'data/checker_var_undefined/';
+	protected $mock_class_name = 'VarUndefined_mock';
+	protected $is_need_token_convert = true;
 } 

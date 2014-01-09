@@ -13,6 +13,7 @@ class Suite {
 	private $project_files = array();
 	private $checkers = array(); // массивы чекеров
 	private $workers = array(); // массив объектов воркеров
+	private $hooks = array(); // массив объектов хуков
 
 	/**
 	 * @var Report
@@ -55,7 +56,8 @@ class Suite {
 		// todo in config
 		$paths = array(
 			'checkers/',
-			'workers/'
+			'workers/',
+			'hooks/',
 		);
 
 		foreach ($paths as $path) {
@@ -163,6 +165,19 @@ class Suite {
 	}
 
 	/**
+	 * кэширует в проперти все доступные хуки
+	 */
+	private function collect_hooks()
+	{
+		$classes = get_declared_classes();
+		foreach ($classes as $class) {
+			if (is_subclass_of($class, "Analisator\\ParentHook")) {
+				$this->hooks[] = new $class;
+			}
+		}
+	}
+
+	/**
 	 * анализ файла
 	 * @param $file_path
 	 */
@@ -203,6 +218,16 @@ class Suite {
 		}
 		catch (\Exception $e) {
 			die('Worker error: ' . $e->getMessage(). ", file: " . $file_path); // todo maybe exception
+		}
+	}
+
+	/**
+	 * запуск хуков (после воркеров, перед чекерами)
+	 */
+	protected function run_hooks()
+	{
+		foreach ($this->hooks as $hook) {
+			$hook->run();
 		}
 	}
 
@@ -257,6 +282,10 @@ class Suite {
 			$this->pre_run($file['path']);
 		}
 
+		// хуки
+		echo "Start hooks...", PHP_EOL;
+		$this->run_hooks();
+
 		error_reporting(E_ERROR);
 
 		// анализаторы
@@ -276,6 +305,7 @@ class Suite {
 
 		$this->collect_checkers();
 		$this->collect_workers();
+		$this->collect_hooks();
 
 		$this->project_files_iterator();
 
