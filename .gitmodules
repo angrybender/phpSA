@@ -1,0 +1,3 @@
+[submodule "third_party/cli_tool"]
+	path = third_party/cli_tool
+	url = https://github.com/jlogsdon/php-cli-tools.git

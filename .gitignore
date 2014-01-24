@@ -6,3 +6,4 @@ tests/results.bin
 tests/lock.lock
 poligon.php
 log.txt
+*.ini
