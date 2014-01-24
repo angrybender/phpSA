@@ -17,5 +17,5 @@ class Checker_VarReAsset extends CheckerSkeleton
 {
 	protected $base_path = 'data/checker_var_re_asset/';
 	protected $mock_class_name = 'VarReAsset_mock';
-	protected $is_need_token_convert = true;
+	protected $extractor = 'Procedure';
 } 

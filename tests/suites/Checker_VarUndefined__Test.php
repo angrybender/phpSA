@@ -11,15 +11,20 @@ include __DIR__ . '/../../workers/ClassInformation.php';
 include __DIR__ . '/../../hooks/IndexerClassInformation.php';
 
 $worker = new \Workers\ClassInformation();
-$worker->class_and_his_methods = array(array(
+$worker->class_info = array(array(
 	'name' => 'MyClass',
 	'methods' => array(
 		array(
 			'name' => 'function_with_ref_call',
 			'args' => array('BY_LINK')
 		),
-	))
-);
+		array(
+			'name' => 'checkBodyForDictionaryHeader',
+			'args' => array('BY_VAL', 'BY_LINK', 'BY_LINK')
+		)
+	),
+	'properties' => array('$_end')
+));
 
 $hook = new \Hooks\IndexerClassInformation();
 $hook->run();
@@ -35,5 +40,5 @@ class Checker_VarUndefined extends CheckerSkeleton
 {
 	protected $base_path = 'data/checker_var_undefined/';
 	protected $mock_class_name = 'VarUndefined_mock';
-	protected $is_need_token_convert = true;
+	protected $extractor = 'Procedure';
 } 

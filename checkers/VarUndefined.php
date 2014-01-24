@@ -20,7 +20,7 @@ class VarUndefined extends \Analisator\ParentChecker
 
 	protected $error_message = 'Неопределенная переменная';
 
-	protected $extractor = 'Full'; // класс-извлекатель нужных блоков
+	protected $extractor = 'Procedure'; // класс-извлекатель нужных блоков
 
 	protected $is_line_return = true; // по умолчанию, строка ошибки определяется по началу блока, но функция проверки  может ее переопределить
 	protected $line = array();
@@ -69,6 +69,7 @@ class VarUndefined extends \Analisator\ParentChecker
 		'pcntl_wait' => array(1),
 		'parse_str' => array(2),
 		'getimagesize' => array(2),
+		'headers_sent' => array(1,2),
 	);
 
 	// такие функции, которые результат пишут в переданную им переменную, но принимают бесконечное кол-во аргументов по ссылке
@@ -79,35 +80,11 @@ class VarUndefined extends \Analisator\ParentChecker
 	private $var_line = array(); // для ошибок пригодится позиция переменной
 	private $var_pos_cache = array(); // кэш позиций переменных
 
-	public function check($tokens)
+	public function check($t, $tokens)
 	{
-		// нам нужно извлечь переданные переменные, поэтому стандартный извлекатель не подходит
-		$procedures = array();
-		foreach ($tokens as $i => $token) {
-			if (is_array($token)
-				&& $token[0] === 'T_FUNCTION'
-				&& isset($tokens[$i+1])
-				&& is_array($tokens[$i+1])
-				&& $tokens[$i+1][0] == 'T_STRING'
-			) {
-				$open_block_position = \Tokenizer::token_ispos(array_slice($tokens, $i), '{');
+		$this->line = array();
 
-				if ($open_block_position !== false) {
-					$function_declaration = array_slice($tokens, $i+2, $open_block_position-2);
-					$body = \Tokenizer::find_full_first_expression(array_slice($tokens, $i+$open_block_position), '{', '}', true);
-
-					$procedures[] = array(
-						'declaration' => $function_declaration,
-						'body' => $body,
-						'name' => $tokens[$i+1][1]
-					);
-				}
-			}
-		}
-
-		foreach ($procedures as $procedure) {
-			$this->analize_code($procedure);
-		}
+		$this->analize_code($tokens);
 
 		return empty($this->line);
 	}
@@ -193,6 +170,10 @@ class VarUndefined extends \Analisator\ParentChecker
 		$isset_vars = $this->variables_as_args_of_instruction($variables, $tokens['body'], 'T_ISSET');
 		$variables = array_diff($variables, $isset_vars);
 
+		// игнорируем внутри empty
+		$isset_vars = $this->variables_as_args_of_instruction($variables, $tokens['body'], 'T_EMPTY');
+		$variables = array_diff($variables, $isset_vars);
+
 		// игнорируем внутри декларации анонимнйо ф-ии (array_map(function($a, $b))
 		$lambda_vars = $this->variables_as_args_of_instruction($variables, $tokens['body'], 'T_FUNCTION');
 		$variables = array_diff($variables, $lambda_vars);
@@ -200,6 +181,10 @@ class VarUndefined extends \Analisator\ParentChecker
 		// быстрая проверка на передачу переменных по ссылке методам классов проекта
 		$by_ref = $this->check_by_ref_into_project($tokens['body']);
 		$variables = array_diff($variables, $by_ref);
+
+		// быстрая проверка на обращение к свойству статического класса
+		$call_prop = $this->check_by_exist_property($tokens['body']);
+		$variables = array_diff($variables, $call_prop);
 
 		if (!empty($variables)) {
 			//print_r($variables);
@@ -212,7 +197,7 @@ class VarUndefined extends \Analisator\ParentChecker
 
 	/**
 	 * быстрая проверка на передачу переменных по ссылке методам классов проекта
-	 * для скорости проверка идет только по имени функции
+	 * проверка идет только по имени функции
 	 */
 	private function check_by_ref_into_project(array $tokens)
 	{
@@ -247,6 +232,31 @@ class VarUndefined extends \Analisator\ParentChecker
 							$variables[] = $this_args[$i];
 						}
 					}
+				}
+			}
+		}
+
+		return $variables;
+	}
+
+	/**
+	 * быстрая проверка на обращение к существующем
+	 * @param array $tokens
+	 * @return array
+	 */
+	private function check_by_exist_property(array $tokens)
+	{
+		$variables = array();
+		foreach ($tokens as $i => $token) {
+			if ($i === 0) continue;
+
+			if (is_array($token)
+				&& is_array($tokens[$i-1])
+				&& ($tokens[$i-1][0] === 'T_DOUBLE_COLON') // конструкция вида ::$var
+				&& $token[0] === 'T_VARIABLE'
+			) {
+				if (isset(\Hooks\IndexerClassInformation::$instance->index_of_properties[$token[1]])) {
+					$variables[] = $token[1];
 				}
 			}
 		}
@@ -516,36 +526,7 @@ class VarUndefined extends \Analisator\ParentChecker
 	 */
 	private function extract_need_arg(array $tokens, $pos = 0)
 	{
-		// убиваем все, что внутри вложенных скобок (если есть), чтобы запятые посчитать верно
-		$brackets_cnt = 0;
-		foreach ($tokens as $i => $token) {
-			if ($token === '(') {
-				$brackets_cnt++;
-			}
-
-			if ($token === ')') {
-				$brackets_cnt--;
-			}
-
-			if ($brackets_cnt>0) {
-				unset($tokens[$i]);
-			}
-		}
-		$tokens = array_values($tokens);
-
-		$comma_cnt = 0;
-		$result_tokens = array();
-		foreach ($tokens as $i => $token) {
-			if ($token === ',') {
-				$comma_cnt++;
-			}
-
-			if ($comma_cnt === $pos - 1) {
-				$result_tokens = array_slice($tokens, $i+1);
-				break;
-			}
-		}
-
-		return empty($result_tokens) ? '' : $result_tokens[0][1];
+		$args = \Expressions::extract_all_args($tokens);
+		return isset($args[$pos-1]) ? str_replace(')', '', $args[$pos-1]) : '';
 	}
 } 

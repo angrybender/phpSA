@@ -1,6 +1,6 @@
 <?php
 /**
- *
+ * собирает методы и свойства каждого класса
  * @author k.vagin
  */
 
@@ -12,7 +12,7 @@ class ClassInformation extends \Analisator\ParentWorker {
 	/**
 	 * @var array
 	 */
-	public $class_and_his_methods = array();
+	public $class_info = array();
 
 	public function work($source_code)
 	{
@@ -23,9 +23,10 @@ class ClassInformation extends \Analisator\ParentWorker {
 		unset($e_obj);
 
 		foreach ($classes as $class) {
-			$this->class_and_his_methods[] = array(
+			$this->class_info[] = array(
 				'name' => $class['name'],
-				'methods' => $this->extract_function_with_declarations($class['body'])
+				'methods' => $this->extract_function_with_declarations($class['body']),
+				'properties' => $this->extract_properties($class['body'])
 			);
 		}
 	}
@@ -57,7 +58,7 @@ class ClassInformation extends \Analisator\ParentWorker {
 
 		$class_body_tokens = null;
 
-		// переформатирование деклараций в структуру инфы о аргументах
+		// переформатирование деклараций методов в структуру инфы о аргументах
 		foreach ($procedures as $j => $procedure) {
 			$args = $procedure['declaration'];
 			array_shift($args); // убираем обрамляющие скобки
@@ -86,6 +87,31 @@ class ClassInformation extends \Analisator\ParentWorker {
 		}
 
 		return $procedures;
+	}
+
+	private function extract_properties($class_body_tokens)
+	{
+		$types = array(
+			'T_PRIVATE',
+			'T_PUBLIC',
+			'T_PROTECTED',
+			'T_STATIC'
+		);
+
+		$properties = array();
+		foreach ($class_body_tokens as $i => $token) {
+			if ($i == 0) continue;
+
+			if (is_array($token)
+				&& $token[0] === 'T_VARIABLE'
+				&& is_array($class_body_tokens[$i-1])
+				&& in_array($class_body_tokens[$i-1][0], $types)
+			) {
+				$properties[] = $token[1];
+			}
+		}
+
+		return $properties;
 	}
 }
 

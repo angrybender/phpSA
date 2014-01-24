@@ -25,7 +25,7 @@ class GlobalFound extends \Analisator\ParentChecker
 	 * @param array $tokens
 	 * @return bool
 	 */
-	public function check($tokens)
+	public function check($tokens, $full_tokens)
 	{
 		$calle = array();
 		foreach ($tokens as $i => $token) {

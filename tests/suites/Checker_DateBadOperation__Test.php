@@ -17,4 +17,5 @@ class Checker_DateBadOperation extends CheckerSkeleton
 {
 	protected $base_path = 'data/checker_date_bad_operation/';
 	protected $mock_class_name = 'DateBadOperation_mock';
-} 
+	protected $extractor = 'Procedure';
+}

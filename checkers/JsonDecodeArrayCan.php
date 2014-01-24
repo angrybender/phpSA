@@ -29,7 +29,7 @@ class JsonDecodeArrayCan extends \Analisator\ParentChecker
 	 * @param array $tokens
 	 * @return bool
 	 */
-	public function check($tokens)
+	public function check($tokens, $full_tokens)
 	{
 		$tokens = array_map(function($val){
 			if (is_array($val)) {

@@ -41,8 +41,9 @@ abstract class ParentChecker {
 	/**
 	 * public for unit tests
 	 * @param $block
+	 * @param $full_tokens
 	 */
-	public function check($block)
+	public function check($block, $full_tokens)
 	{}
 
 	/**
@@ -52,7 +53,7 @@ abstract class ParentChecker {
 	{
 		$reporter = Report::getInstance();
 		foreach ($this->blocks as $block) {
-			$result = $this->check($block['body']);
+			$result = $this->check($block['body'], $block);
 
 			$line = $this->is_line_return ? $this->line : $block['line'];
 

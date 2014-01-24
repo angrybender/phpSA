@@ -1,15 +1,18 @@
-list($d,$m,$y)=explode(".",$date);
-$y="$y";
-$d1=array("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday");
-$d2=array("Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресение");
-for($i=0;$i<7;$i++){if($d1[$i]==$day){$day="$d2[$i]";}}$day= date("l", mktime(0,0,0,$m,$d,$y));
-$d1=array("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday");
-$d2=array("в Понедельник","во Вторник","в Среду","в Четверг","в Пятницу","в Субботу","в Воскресение");
-for($i=0;$i<7;$i++){if($d1[$i]==$day){$day="$d2[$i]";}}
-echo"";if($m<10){$m=str_replace("0","",$m);}
-else{$m="$m";}
-$rl=array ("","Января", "Фераля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря");
-for($i=1;$i<13;$i++){if($m==$i){$ms="$rl[$i]";}}
-$dsw=str_replace("0","",$d);
-if($time==""){$time="";}else{$time="в $time";}
-print "<font face=verdana size=1><i>Новость добавлена: $dsw $ms $y г.  $day  </i></font>\n";
+<?php
+function d() {
+	list($d,$m,$y)=explode(".",$date);
+	$y="$y";
+	$d1=array("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday");
+	$d2=array("Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресение");
+	for($i=0;$i<7;$i++){if($d1[$i]==$day){$day="$d2[$i]";}}$day= date("l", mktime(0,0,0,$m,$d,$y));
+	$d1=array("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday");
+	$d2=array("в Понедельник","во Вторник","в Среду","в Четверг","в Пятницу","в Субботу","в Воскресение");
+	for($i=0;$i<7;$i++){if($d1[$i]==$day){$day="$d2[$i]";}}
+	echo"";if($m<10){$m=str_replace("0","",$m);}
+	else{$m="$m";}
+	$rl=array ("","Января", "Фераля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря");
+	for($i=1;$i<13;$i++){if($m==$i){$ms="$rl[$i]";}}
+	$dsw=str_replace("0","",$d);
+	if($time==""){$time="";}else{$time="в $time";}
+	print "<font face=verdana size=1><i>Новость добавлена: $dsw $ms $y г.  $day  </i></font>\n";
+}

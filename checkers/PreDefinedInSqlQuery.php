@@ -29,7 +29,7 @@ class PreDefinedInSqlQuery extends \Analisator\ParentChecker
 
 	private $tokens;
 
-	public function check($tokens)
+	public function check($tokens, $full_tokens)
 	{
 		foreach ($tokens as $i => $token) {
 			if (is_array($token) && ($token[0] === 'T_COMMENT' || $token[0] === 'T_DOC_COMMENT')) {

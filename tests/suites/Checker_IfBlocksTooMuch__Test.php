@@ -24,7 +24,7 @@ class Checker_IfBlocksTooMuch  extends PHPUnit_Framework_TestCase
 	public function test_good($code)
 	{
 		$checker = new IfBlocksTooMuch_mock('');
-		$result = $checker->check($code);
+		$result = $checker->check($code, array());
 
 		$this->assertEquals(true, $result);
 	}
@@ -49,7 +49,7 @@ class Checker_IfBlocksTooMuch  extends PHPUnit_Framework_TestCase
 	public function test_bad($code)
 	{
 		$checker = new IfBlocksTooMuch_mock('');
-		$result = $checker->check($code);
+		$result = $checker->check($code, array());
 
 		$this->assertEquals(false, $result);
 	}

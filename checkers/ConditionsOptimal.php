@@ -16,7 +16,7 @@ class ConditionsOptimal extends \Analisator\ParentChecker
 
 	protected $extractor = 'Conditions'; // класс-извлекатель нужных блоков
 
-	public function check($code)
+	public function check($code, $full_tokens)
 	{
 		//file_put_contents('log.txt', $code.PHP_EOL, FILE_APPEND);
 
@@ -27,7 +27,7 @@ class ConditionsOptimal extends \Analisator\ParentChecker
 		}
 		catch (\Exception $e) {
 			echo $code;
-			die(PHP_EOL);
+			die('ConditionsOptimal error ' . PHP_EOL);
 		}
 
 	}

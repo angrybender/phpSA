@@ -23,7 +23,7 @@ class IfBlocksTooMuch extends \Analisator\ParentChecker
 
 	private $max = 4;
 
-	public function check($code)
+	public function check($code, $full_tokens)
 	{
 		$tokens = \Tokenizer::get_tokens_of_expression($code);
 		$cnt = 0;

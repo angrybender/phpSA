@@ -39,11 +39,7 @@ class DateBadOperation extends \Analisator\ParentChecker
 	private $tokens = array();
 	private $code_lines = array();
 
-	/**
-	 * @param $code
-	 * @return bool
-	 */
-	public function check($code)
+	public function check($code, $full_tokens)
 	{
 		if (is_scalar($code)) {
 			if (!\Tokenizer::is_open_tag($code)) {

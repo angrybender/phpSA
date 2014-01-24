@@ -24,7 +24,7 @@ class Checker_JsonDecodeArrayCan extends PHPUnit_Framework_TestCase
 	public function test_JsonDecodeArrayCan_good($code)
 	{
 		$checker = new JsonDecodeArrayCan_mock('');
-		$result = $checker->check(\Tokenizer::get_tokens($code));
+		$result = $checker->check(\Tokenizer::get_tokens($code), array());
 
 		$this->assertEquals(true, $result);
 	}
@@ -49,7 +49,7 @@ class Checker_JsonDecodeArrayCan extends PHPUnit_Framework_TestCase
 	public function test_JsonDecodeArrayCan_bad($code)
 	{
 		$checker = new JsonDecodeArrayCan_mock('');
-		$result = $checker->check(\Tokenizer::get_tokens($code));
+		$result = $checker->check(\Tokenizer::get_tokens($code), array());
 
 		$this->assertEquals(false, $result);
 	}

@@ -14,7 +14,7 @@ class ConditionsOptimal_mock extends \Checkers\ConditionsOptimal {
 	}
 }
 
-class Checker_DateBadOperation extends PHPUnit_Framework_TestCase
+class Checker_ConditionsOptimal extends PHPUnit_Framework_TestCase
 {
 	private $base_path = 'data/checker_conditions_optimal/';
 
@@ -24,7 +24,7 @@ class Checker_DateBadOperation extends PHPUnit_Framework_TestCase
 	public function test_ConditionsOptimal_good($code)
 	{
 		$checker = new ConditionsOptimal_mock('');
-		$result = $checker->check($code);
+		$result = $checker->check($code, array());
 
 		$this->assertEquals(true, $result);
 	}
@@ -49,7 +49,7 @@ class Checker_DateBadOperation extends PHPUnit_Framework_TestCase
 	public function test_ConditionsOptimal_bad($code)
 	{
 		$checker = new ConditionsOptimal_mock('');
-		$result = $checker->check($code);
+		$result = $checker->check($code, array());
 
 		$this->assertEquals(false, $result);
 	}

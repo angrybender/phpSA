@@ -31,7 +31,7 @@ class StrReplaceOptimal extends \Analisator\ParentChecker
 	 * @param array $code
 	 * @return bool
 	 */
-	public function check($tokens)
+	public function check($tokens, $full_tokens)
 	{
 		$calle = array();
 		foreach ($tokens as $i => $token) {

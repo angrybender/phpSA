@@ -9,11 +9,13 @@ namespace Hooks;
 class IndexerClassInformation extends \Analisator\ParentHook {
 
 	private $index_by_method_name_method_args_count = array();
+	public $index_of_properties = array();
 
 	public function run()
 	{
-		foreach (\Workers\ClassInformation::$instance->class_and_his_methods as $class_info) {
+		foreach (\Workers\ClassInformation::$instance->class_info as $class_info) {
 			$this->class_treat($class_info['name'], $class_info['methods']);
+			$this->prop_indexer($class_info['properties']);
 		}
 	}
 
@@ -41,7 +43,13 @@ class IndexerClassInformation extends \Analisator\ParentHook {
 			}
 
 			$this->index_by_method_name_method_args_count[$key][] = $method;
+		}
+	}
 
+	private function prop_indexer(array $properties)
+	{
+		foreach ($properties as $var_name) {
+			$this->index_of_properties[$var_name] = true;
 		}
 	}
 

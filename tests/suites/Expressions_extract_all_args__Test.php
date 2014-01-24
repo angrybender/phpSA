@@ -27,10 +27,6 @@ class Expressions_extract_all_args extends PHPUnit_Framework_TestCase {
 				'$b'
 			),
 			array(
-				'$aar->prop, 1, $t',
-				'$aar->prop, 1, $t'
-			),
-			array(
 				'func($a, $b), 1, $t',
 				'func($a,$b), 1, $t'
 			),
@@ -40,6 +36,10 @@ class Expressions_extract_all_args extends PHPUnit_Framework_TestCase {
 
 				'func($a,$b->prop($c)), 1, $t'
 			),
+			array(
+				'$non_displayables, \'\', $str, -1, $count',
+				'$non_displayables, \'\', $str, -1, $count'
+			)
 		);
 	}
 } 

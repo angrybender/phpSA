@@ -402,6 +402,7 @@ class Expressions {
 	 */
 	public static function extract_all_args(array $tokens)
 	{
+		$tokens = array_values($tokens);
 		$brackets_cnt = 0;
 		$comma_positions = array(-1);
 		foreach ($tokens as $i => $token) {

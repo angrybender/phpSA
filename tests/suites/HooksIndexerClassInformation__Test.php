@@ -14,7 +14,7 @@ class HooksIndexerClassInformation extends PHPUnit_Framework_TestCase
 	{
 		// подсовываем в воркер:
 		$worker = new \Workers\ClassInformation();
-		$worker->class_and_his_methods = array(array(
+		$worker->class_info = array(array(
 			'name' => 'test_class1',
 			'methods' => array(
 				array(
@@ -27,7 +27,8 @@ class HooksIndexerClassInformation extends PHPUnit_Framework_TestCase
 						'BY_LINK', 'BY_VAL'
 					)
 				),
-			)),
+			),
+			'properties' => array()),
 			array(
 			'name' => 'test_class2',
 			'methods' => array(
@@ -41,7 +42,8 @@ class HooksIndexerClassInformation extends PHPUnit_Framework_TestCase
 						'BY_LINK'
 					)
 				),
-			)
+			),
+			'properties' => array()
 		));
 
 		$hook = new \Hooks\IndexerClassInformation();

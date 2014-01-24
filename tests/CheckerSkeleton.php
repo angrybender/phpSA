@@ -11,6 +11,8 @@ class CheckerSkeleton extends PHPUnit_Framework_TestCase
 	protected $base_path = '';
 	protected $mock_class_name = '';
 	protected $is_need_token_convert = false;
+	protected $extractor = 'Full';
+	protected $filter = array();
 
 	protected function run_checker($file_name)
 	{
@@ -20,7 +22,17 @@ class CheckerSkeleton extends PHPUnit_Framework_TestCase
 			$code = \Tokenizer::get_tokens($code);
 		}
 
-		return $checker->check($code);
+		$extractor =  'Extractors\\' . $this->extractor;
+		$extractor_obj = new $extractor($code);
+
+		$blocks = $extractor_obj->extract($this->filter);
+
+		$result = true;
+		foreach ($blocks as $block) {
+			$result = $result && $checker->check($block['body'], $block);
+		}
+
+		return $result;
 	}
 
 	/**

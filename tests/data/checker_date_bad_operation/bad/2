@@ -1,4 +1,7 @@
+<?php
+function a() {
 $strDate = date('d-m-Y', $dataTime);
   $arrDate = explode('-', $strDate);
 
   return mktime(0, 0, 0, $arrDate[1], $arrDate[0], $arrDate[2]);
+  }
