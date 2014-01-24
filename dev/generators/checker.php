@@ -12,7 +12,7 @@ $class_name = $arguments['N'];
 $class_file_name = __DIR__ . '/../../checkers/' . $arguments['N'] . '.php';
 
 if (file_exists($class_file_name)) {
-	throw new Exception("Class exist");
+	throw new Exception("Checker exist");
 }
 
 // сохранение класса
