@@ -1,3 +1,6 @@
 [submodule "third_party/cli_tool"]
 	path = third_party/cli_tool
 	url = https://github.com/jlogsdon/php-cli-tools.git
+[submodule "third_party/php_parser"]
+	path = third_party/php_parser
+	url = git://github.com/nikic/PHP-Parser.git
