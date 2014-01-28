@@ -25,56 +25,11 @@ class VarUndefined extends \Analisator\ParentChecker
 	protected $is_line_return = true; // по умолчанию, строка ошибки определяется по началу блока, но функция проверки  может ее переопределить
 	protected $line = array();
 
-	protected $predefined_vars = array(
-		'$_POST',
-		'$_SERVER',
-		'$_GET',
-		'$_POST',
-		'$_FILES',
-		'$_REQUEST',
-		'$_SESSION',
-		'$_ENV',
-		'$_COOKIE',
-		'$GLOBALS',
-		'$php_errormsg',
-		'$HTTP_RAW_POST_DATA',
-		'$http_response_header',
-		'$argc',
-		'$argv',
-		'$this'
-	);
-
 	protected $includes = array(
 		'T_INCLUDE',
 		'T_INCLUDE_ONCE',
 		'T_REQUIRE',
 		'T_REQUIRE_ONCE'
-	);
-
-	// такие функции, которые некоторый результат пишут в переданную им переменную
-	private $function_callback_into_variable = array(
-		'exec' => array(2,3), // возвращает значение в 2 и 3й аргументы
-		'preg_match' => array(3),
-		'preg_match_all' => array(3),
-		'fsockopen' => array(3,4),
-		'xml_parse_into_struct' => array(3,4),
-		'sqlite_open' => array(3),
-		'sqlite_popen' => array(3),
-		'preg_replace' => array(5),
-		'openssl_sign' => array(2,3),
-		'pcntl_waitpid' => array(2),
-		'stream_socket_server' => array(2,3),
-		'stream_socket_client' => array(2,3),
-		'socket_getsockname' => array(2,3),
-		'pcntl_wait' => array(1),
-		'parse_str' => array(2),
-		'getimagesize' => array(2),
-		'headers_sent' => array(1,2),
-	);
-
-	// такие функции, которые результат пишут в переданную им переменную, но принимают бесконечное кол-во аргументов по ссылке
-	private $function_callback_into_variable_infinity = array(
-		'sscanf' => 3, // с третьего аргумента и дальше
 	);
 
 	private $var_line = array(); // для ошибок пригодится позиция переменной
@@ -113,7 +68,7 @@ class VarUndefined extends \Analisator\ParentChecker
 		$variables = array_diff($variables, $_args);
 
 		// пропускаем предопределенные
-		$variables = array_diff($variables, $this->predefined_vars);
+		$variables = array_diff($variables, \Repository::$predefined_vars);
 
 		// пропускаем переменные, которые получают значение от функций, будучи переданными как аргумент. пример: preg_match($regexp, $mime, $matches)
 		$callback_into_variable = $this->variables_assets_by_procedure($tokens['body']);
@@ -295,7 +250,7 @@ class VarUndefined extends \Analisator\ParentChecker
 	private function variables_assets_by_procedure(array $_tokens)
 	{
 		$callback_into_variable = array();
-		foreach ($this->function_callback_into_variable as $func_name => $arr_func_arg_pos) {
+		foreach (\Repository::$function_callback_into_variable as $func_name => $arr_func_arg_pos) {
 			$__tokens = $_tokens;
 			while (true) {
 				$function_callback_into_variable_pos = \Tokenizer::token_ispos($__tokens, $func_name, 'T_STRING');
@@ -319,7 +274,7 @@ class VarUndefined extends \Analisator\ParentChecker
 			}
 		}
 
-		foreach ($this->function_callback_into_variable_infinity as $func_name => $func_arg_start_pos) {
+		foreach (\Repository::$function_callback_into_variable_infinity as $func_name => $func_arg_start_pos) {
 			$__tokens = $_tokens;
 			while (true) {
 				$function_callback_into_variable_pos = \Tokenizer::token_ispos($__tokens, $func_name, 'T_STRING');

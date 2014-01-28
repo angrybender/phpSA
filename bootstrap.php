@@ -17,6 +17,7 @@ include 'analisator/Report.php';
 include 'analisator/Config.php';
 include 'analisator/Suite.php';
 
+include 'core/Repository.php';
 include 'core/Utils.php';
 include 'core/CopyPaste.php';
 include 'core/Heuristic.php';

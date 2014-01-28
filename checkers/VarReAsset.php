@@ -59,7 +59,7 @@ class VarReAsset extends VarUndefined
 		}
 
 		// пропускаем предопределенные
-		$variables = array_diff($variables, $this->predefined_vars);
+		$variables = array_diff($variables, \Repository::$predefined_vars);
 
 		// индекс переменных:
 		$this->build_variables_index($variables, $tokens['body']);
