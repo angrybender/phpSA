@@ -14,6 +14,10 @@ class CalledFunction extends \Analisator\ParentExtractor {
 	 */
 	public function extract(array $filter)
 	{
+		if (is_scalar($filter['name'])) {
+			$filter['name'] = array($filter['name']);
+		}
+
 		$tokens = $this->tokens;
 		$function = array();
 		foreach ($tokens as $i => $token) {
@@ -21,7 +25,7 @@ class CalledFunction extends \Analisator\ParentExtractor {
 				&& $token[0] === 'T_STRING'
 				&& isset($tokens[$i+1])
 				&& $tokens[$i+1][0] == '('
-				&& strtolower($token[1]) === $filter['name']
+				&& in_array(strtolower($token[1]), $filter['name'])
 			) {
 
 				$calle = \Tokenizer::find_full_first_expression(array_slice($tokens, $i+1), '(', ')');

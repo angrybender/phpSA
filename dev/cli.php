@@ -10,12 +10,11 @@ $arguments = new \cli\Arguments();
 
 $arguments->addFlag(array('help', 'h'), 'Show this help screen');
 
-// todo переделать нахуй эту хуйню, какой мудак мог так накодить, в качестве опции принимает только 1 букву
-$arguments->addOption(array('G'), array(
+$arguments->addOption(array('G', 'generator'), array(
 	'default'     => false,
 	'description' => 'Start generator'));
 
-$arguments->addOption(array('N'), array(
+$arguments->addOption(array('N', 'name'), array(
 	'default'     => false,
 	'description' => 'Name for generator if need'));
 
