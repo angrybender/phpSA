@@ -25,7 +25,10 @@ class IfBlocksTooMuch extends \Analisator\ParentChecker
 
 	public function check($code, $full_tokens)
 	{
-		$tokens = \Tokenizer::get_tokens_of_expression($code);
+		$tokens = $code['body'];
+
+		print_r($full_tokens);
+
 		$cnt = 0;
 		$last_ifpos = 0;
 		while (true) {
