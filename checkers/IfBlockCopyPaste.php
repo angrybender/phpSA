@@ -2,6 +2,7 @@
 
 /**
  * бессмысленная и беспощадная копипаста if-ов, индусский код
+ * NB. проверка показала достаточно больше количество сомнительных срабатываний. вероятно чекер спорный
  */
 
 namespace Checkers;
@@ -16,7 +17,7 @@ class IfBlockCopyPaste extends \Analisator\ParentChecker
 		MAX_REPEAT_VALUES 	= 3,
 		MAX_DIFFERENCE 		= 3;	// максимальное количество позиций, в которых отличается код
 
-	protected $error_message = 'Возмжно, индусский код (повторение If ...)';
+	protected $error_message = 'Возможно, индусский код (повторение If ...)';
 
 	protected $extractor = 'Procedure';
 
@@ -195,9 +196,8 @@ class IfBlockCopyPaste extends \Analisator\ParentChecker
 		$check_on_const = function($value)
 		{
 			if (is_array($value)) {
-				return in_array($value, array(
+				return !in_array($value[0], array(
 					'T_LNUMBER',
-					'T_STRING',
 					'T_CONSTANT_ENCAPSED_STRING'
 				));
 			}

@@ -52,17 +52,21 @@ abstract class ParentChecker {
 	protected function iteration_check()
 	{
 		$reporter = Report::getInstance();
+		$lines = array();
 		foreach ($this->blocks as $block) {
 			$result = $this->check($block['body'], $block);
 
 			$line = $this->is_line_return ? $this->line : $block['line'];
 
-			if ($result === false) {
+			if ($result === false && !in_array($line, $lines)) { // иногда бывает что дублируется
+
 				$reporter->addError(
 					$this->error_message,
 					get_class($this),
 					$line
 				);
+
+				$lines[] = $line;
 			}
 		}
 	}
