@@ -1,7 +1,6 @@
 <?php
 /**
  * очень много вложенных if-ов путает код
- * todo переработать учет вложенности добавить учет расстояния
  * @author k.vagin
  */
 
@@ -16,58 +15,37 @@ class IfBlocksTooMuch extends \Analisator\ParentChecker
 
 	protected $error_message = 'Слишком большое количество вложенных If';
 
-	protected $extractor = 'Blocks'; // класс-извлекатель нужных блоков
-	protected $filter = array(
-		'block' => 'T_IF'
-	);
+	private $max = 3;			// больше этого значения вложенных if - ошибка
+	private $line_distance = 3; // учитывать только если не больше стольки строк между началами вложенных блоками
 
-	private $max = 4;
+	const
+		NODE_NAME = 'PHPParser_Node_Stmt_If';
 
-	public function check($tokens, $full_tokens)
+	protected function check($nodes)
 	{
-		$cnt = 0;
-		$last_ifpos = 0;
-		while (true) {
-			$if_pos = \Tokenizer::token_ispos($tokens, false, 'T_IF');
-			if ($if_pos !== false) {
-				$tokens = array_slice($tokens, $if_pos+1);
-
-				$cnt++;
-
-				if ($cnt > 1 && ($if_pos - $last_ifpos > 10)) { // если они далеко друг от друга - хрен с ним, а то уж слишком много срабатываний
-					$cnt--;
-				}
-			}
-			else {
-				break;
-			}
-
-			$last_ifpos = $if_pos;
-		}
-
-		//print_r($tokens);
-		//die(PHP_EOL);
-
-		return ($cnt < $this->max) || ($this->recursive_if_counter($tokens, 0) < $this->max);
-		// 2 классификатора для минимизации ложных срабатываний
-		// один учитывает вложенность, другой - расстояние
-	}
-
-	private function recursive_if_counter($code, $last_count)
-	{
-		//print_r($code);
-
-		$if_extractor = new \Extractors\Blocks($code);
-		$ifs = $if_extractor->extract($this->filter);
-
-		$count = 0;
-		foreach ($ifs as $if) {
-			$count = $this->recursive_if_counter($if['body'], $last_count+1);
-			if ($count > $this->max) {
-				return ($count + $last_count);
+		$if_nodes = \Core\AST::find_tree_by_root($nodes, self::NODE_NAME);
+		foreach ($if_nodes as $if_root) {
+			if ($this->check_tree($if_root, 0) + 1 > $this->max) {
+				$this->set_error(\Core\AST::get_line_of_tree($if_root));
 			}
 		}
-
-		return $count + $last_count;
 	}
-} 
+
+	protected function check_tree($if_root, $deep)
+	{
+		$start_line = \Core\AST::get_line_of_tree($if_root);
+
+		$if_sub_tree = \Core\AST::find_tree_by_root($if_root, self::NODE_NAME, false);
+		$nested_deep = array($deep);
+		foreach ($if_sub_tree as $if_root) {
+			if (\Core\AST::get_line_of_tree($if_root) - $start_line > $this->line_distance) {
+				// если вложенные блоки далеко друг от друга - пропускаем
+				continue;
+			}
+
+			$nested_deep[] = $this->check_tree($if_root, $deep+1);
+		}
+
+		return max($nested_deep);
+	}
+}

@@ -6,6 +6,8 @@
 
 ini_set('memory_limit', '2048M');
 
+include 'third_party/php_parser/lib/bootstrap.php';
+
 include 'analisator/def.types_of_checkers.php';
 
 include 'analisator/ParentChecker.php';
@@ -17,14 +19,8 @@ include 'analisator/Report.php';
 include 'analisator/Config.php';
 include 'analisator/Suite.php';
 
-include 'core/Repository.php';
-include 'core/Utils.php';
-include 'core/CopyPaste.php';
-include 'core/Heuristic.php';
+include 'core/AST.php';
 include 'core/Tokenizer.php';
-include 'core/Procedures.php';
-include 'core/Expressions.php';
-include 'core/Variables.php';
 
 spl_autoload_register(function($class)
 {

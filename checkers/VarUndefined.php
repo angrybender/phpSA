@@ -12,7 +12,7 @@
 namespace Checkers;
 
 
-class VarUndefined extends \Analisator\ParentChecker
+class VarUndefined
 {
 	protected $types = array(
 		CHECKER_ERRORS

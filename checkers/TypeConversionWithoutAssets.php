@@ -7,7 +7,7 @@
 namespace Checkers;
 
 
-class TypeConversionWithoutAssets extends \Analisator\ParentChecker
+class TypeConversionWithoutAssets
 {
 	protected $types = array(
 		CHECKER_ERRORS

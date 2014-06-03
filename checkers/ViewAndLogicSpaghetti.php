@@ -1,7 +1,7 @@
 <?php
 namespace Checkers;
 
-class ViewAndLogicSpaghetti extends \Analisator\ParentChecker
+class ViewAndLogicSpaghetti
 {
 	protected $types = array(
 		CHECKER_HEURISTIC

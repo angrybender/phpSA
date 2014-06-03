@@ -19,32 +19,12 @@ abstract class ParentChecker {
 
 	protected $error_message = ''; // текст ворнинга
 
-	protected $blocks = array(); // извлеченные для анализа блоки
+	protected $errors_line = array();
 
 	/**
-	 * флаг - пропускать проверку, если извлекатель ничего не вернул или нет
-	 * по умолчанию - пропускать
-	 * @var bool
+	 * @param $nodes
 	 */
-	protected $is_extract_mandatory = true;
-
-	/**
-	 * @var \Analisator\ParentExtractor
-	 */
-	protected $extractor = ''; // класс-извлекатель нужных блоков, имя без неймспейса
-
-	protected $filter = array(); //фильтр для извлекателя (может не применяться)
-
-	protected $is_line_return = false; // по умолчанию, строка ошибки определяется по началу блока, но функция проверки  может ее переопределить
-	protected $line;					// может быть массивом
-
-	/**
-	 * public for unit tests
-	 * @param $block
-	 * @param $full_tokens
-	 */
-	public function check($block, $full_tokens)
-	{}
+	abstract protected function check($nodes);
 
 	/**
 	 * полный путь к текущему обрабатываемому файлу
@@ -52,57 +32,28 @@ abstract class ParentChecker {
 	 */
 	protected $file = '';
 
-	/**
-	 * для каждого блока вызывает ф-ию проверки
-	 */
-	protected function iteration_check()
+	protected function set_error($line)
 	{
-		$reporter = Report::getInstance();
-		$lines = array();
-		foreach ($this->blocks as $block) {
-			$result = $this->check($block['body'], $block);
-
-			$line = $this->is_line_return ? $this->line : $block['line'];
-
-			if ($result === false && !in_array($line, $lines)) { // иногда бывает что дублируется
-
-				$reporter->addError(
-					$this->error_message,
-					get_class($this),
-					$line
-				);
-
-				$lines[] = $line;
-			}
-		}
+		/*Report::getInstance()->addError(
+			$this->error_message,
+			get_class($this),
+			$line
+		);*/
+		$this->errors_line[] = $line;
 	}
 
-	protected function extract($source_code)
+	public function get_errors()
 	{
-		if (empty($this->extractor)) {
-			throw new \Exception("класс-извлекатель нужных блоков empty"); // todo Exception
-		}
-
-		$this->extractor = 'Extractors\\' . $this->extractor;
-		$extractor_obj = new $this->extractor($source_code);
-		if (!($extractor_obj instanceof \Analisator\ParentExtractor)) {
-			throw new \Exception("класс-извлекатель не \\Analisator\\ParentExtractor"); // todo Exception
-		}
-
-		$this->blocks = $extractor_obj->extract($this->filter);
-
-		if (empty($this->blocks) && !$this->is_extract_mandatory) {
-			$this->blocks = $source_code; // fixme
-		}
+		return array_unique($this->errors_line);
 	}
 
 	/**
-	 * @param array|string $source_code
+	 * @param array $nodes
+	 * @param string $source_file_path
 	 */
-	public function __construct($source_code, $source_file_path = '')
+	public function __construct($nodes, $source_file_path = '')
 	{
 		$this->file = $source_file_path;
-		$this->extract($source_code);
-		$this->iteration_check();
+		$this->check($nodes);
 	}
 } 

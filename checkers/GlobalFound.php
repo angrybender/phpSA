@@ -7,7 +7,7 @@
 namespace Checkers;
 
 
-class GlobalFound extends \Analisator\ParentChecker
+class GlobalFound
 {
 
 	protected $types = array(

@@ -7,7 +7,7 @@
 namespace Checkers;
 
 
-class PreDefinedInSqlQuery extends \Analisator\ParentChecker
+class PreDefinedInSqlQuery
 {
 	protected $types = array(
 		CHECKER_HEURISTIC,

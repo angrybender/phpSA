@@ -14,7 +14,7 @@
 namespace Checkers;
 
 
-class VarReAsset extends VarUndefined
+class VarReAsset
 {
 	protected $types = array(
 		CHECKER_HEURISTIC

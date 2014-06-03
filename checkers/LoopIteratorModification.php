@@ -1,7 +1,7 @@
 <?php
 namespace Checkers;
 
-class LoopIteratorModification extends \Analisator\ParentChecker
+class LoopIteratorModification
 {
 	protected $types = array(
 		CHECKER_ERRORS

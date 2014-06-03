@@ -1,6 +1,7 @@
 <?php
 /**
  *
+ *  todo отключены воркеры и хуки
  * @author k.vagin
  */
 
@@ -186,7 +187,7 @@ class Suite {
 		//file_put_contents('log.txt', $file_path.PHP_EOL, FILE_APPEND);
 
 		$code = file_get_contents($file_path);
-		$tokens = \Tokenizer::get_tokens($code);
+		$tokens = \Core\Tokenizer::parser($code);
 
 		try {
 			foreach ($this->checkers as $checker) {
@@ -283,14 +284,14 @@ class Suite {
 	protected function project_files_iterator()
 	{
 		// воркеры и тд
-		echo "Start workers...", PHP_EOL;
+		/*echo "Start workers...", PHP_EOL;
 		foreach ($this->project_files as $file) {
 			$this->pre_run($file['path']);
-		}
+		}*/
 
 		// хуки
-		echo "Start hooks...", PHP_EOL;
-		$this->run_hooks();
+		//echo "Start hooks...", PHP_EOL;
+		//$this->run_hooks();
 
 		error_reporting(E_ERROR);
 

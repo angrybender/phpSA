@@ -13,7 +13,7 @@
 namespace Checkers;
 
 
-class StrReplaceOptimal extends \Analisator\ParentChecker
+class StrReplaceOptimal
 {
 
 	protected $types = array(

@@ -9,30 +9,22 @@ include __DIR__ . '/../bootstrap.php';
 class CheckerSkeleton extends PHPUnit_Framework_TestCase
 {
 	protected $base_path = '';
-	protected $mock_class_name = '';
-	protected $is_need_token_convert = false;
-	protected $extractor = 'Full';
-	protected $filter = array();
+	protected $class_name = '';
+	protected $is_need_token_convert = true;
 
 	protected function run_checker($file_name)
 	{
-		$checker = new $this->mock_class_name('', $file_name);
 		$code = file_get_contents($file_name);
 		if ($this->is_need_token_convert) {
-			$code = \Tokenizer::get_tokens($code);
+			$code = \Core\Tokenizer::parser($code);
 		}
 
-		$extractor =  'Extractors\\' . $this->extractor;
-		$extractor_obj = new $extractor($code);
+		/** @var \Analisator\ParentChecker $checker */
+		$checker_name = "\\Checkers\\{$this->class_name}";
+		$checker = new $checker_name($code, $file_name);
 
-		$blocks = $extractor_obj->extract($this->filter);
-
-		$result = true;
-		foreach ($blocks as $block) {
-			$result = $result && $checker->check($block['body'], $block);
-		}
-
-		return $result;
+		$errors = $checker->get_errors();
+		return count($errors) == 0;
 	}
 
 	/**

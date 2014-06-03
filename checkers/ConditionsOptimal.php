@@ -6,7 +6,7 @@
 
 namespace Checkers;
 
-class ConditionsOptimal extends \Analisator\ParentChecker
+class ConditionsOptimal
 {
 	protected $types = array(
 		CHECKER_ERRORS

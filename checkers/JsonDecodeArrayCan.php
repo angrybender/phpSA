@@ -8,7 +8,7 @@
 namespace Checkers;
 
 
-class JsonDecodeArrayCan extends \Analisator\ParentChecker
+class JsonDecodeArrayCan
 {
 
 	protected $types = array(

@@ -7,7 +7,7 @@
 
 namespace Checkers;
 
-class IfBlockCopyPaste extends \Analisator\ParentChecker
+class IfBlockCopyPaste
 {
 	protected $types = array(
 		CHECKER_HEURISTIC
