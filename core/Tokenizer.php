@@ -105,7 +105,7 @@ class Tokenizer {
 	 * @param array $tokens
 	 * @return string
 	 */
-	public static function tokens_to_source(array $tokens)
+	public static function tokens_to_source(array $tokens, $not_beautiful = false)
 	{
 		$arr_tokens = array();
 		foreach ($tokens as $token) {
@@ -121,7 +121,7 @@ class Tokenizer {
 			}
 		}
 
-		return join('', $arr_tokens);
+		return join($not_beautiful ? ' ' : '', $arr_tokens);
 	}
 
 	/**

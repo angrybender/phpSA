@@ -47,6 +47,12 @@ abstract class ParentChecker {
 	{}
 
 	/**
+	 * полный путь к текущему обрабатываемому файлу
+	 * @var string
+	 */
+	protected $file = '';
+
+	/**
 	 * для каждого блока вызывает ф-ию проверки
 	 */
 	protected function iteration_check()
@@ -93,8 +99,9 @@ abstract class ParentChecker {
 	/**
 	 * @param array|string $source_code
 	 */
-	public function __construct($source_code)
+	public function __construct($source_code, $source_file_path = '')
 	{
+		$this->file = $source_file_path;
 		$this->extract($source_code);
 		$this->iteration_check();
 	}

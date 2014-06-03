@@ -4,6 +4,8 @@
  * @author k.vagin
  */
 
-if ($a == $b && date('Y')) {
-	$a = 1;
+function a() {
+	if ($a == $b && date('Y')) {
+		$a = 1;
+	}
 }

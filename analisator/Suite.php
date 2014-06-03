@@ -190,13 +190,19 @@ class Suite {
 
 		try {
 			foreach ($this->checkers as $checker) {
-				$checker_object = new $checker($tokens);
+				$checker_object = new $checker($tokens, $file_path);
 				unset($checker_object);
 			}
 
 			$this->print_result();
 		}
+		catch (\PHPParser_Error $e) {
+			// PHPParser очень нестабильно ищет ошибки в пхп коде, когда он смешен с хтмл
+			$this->print_result();
+		}
 		catch (\Exception $e) {
+			echo PHP_EOL, $file_path, PHP_EOL;  // todo
+			echo $e->getMessage(), PHP_EOL; // todo
 			$this->print_result(true);
 		}
 	}

@@ -16,7 +16,7 @@ class CheckerSkeleton extends PHPUnit_Framework_TestCase
 
 	protected function run_checker($file_name)
 	{
-		$checker = new $this->mock_class_name('');
+		$checker = new $this->mock_class_name('', $file_name);
 		$code = file_get_contents($file_name);
 		if ($this->is_need_token_convert) {
 			$code = \Tokenizer::get_tokens($code);

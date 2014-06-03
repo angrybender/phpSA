@@ -23,12 +23,8 @@ class IfBlocksTooMuch extends \Analisator\ParentChecker
 
 	private $max = 4;
 
-	public function check($code, $full_tokens)
+	public function check($tokens, $full_tokens)
 	{
-		$tokens = $code['body'];
-
-		print_r($full_tokens);
-
 		$cnt = 0;
 		$last_ifpos = 0;
 		while (true) {
@@ -49,13 +45,18 @@ class IfBlocksTooMuch extends \Analisator\ParentChecker
 			$last_ifpos = $if_pos;
 		}
 
-		return ($cnt < $this->max) || ($this->recursive_if_counter($code, 0) < $this->max);
+		//print_r($tokens);
+		//die(PHP_EOL);
+
+		return ($cnt < $this->max) || ($this->recursive_if_counter($tokens, 0) < $this->max);
 		// 2 классификатора для минимизации ложных срабатываний
 		// один учитывает вложенность, другой - расстояние
 	}
 
 	private function recursive_if_counter($code, $last_count)
 	{
+		//print_r($code);
+
 		$if_extractor = new \Extractors\Blocks($code);
 		$ifs = $if_extractor->extract($this->filter);
 

@@ -88,7 +88,7 @@ class Blocks extends \Analisator\ParentExtractor {
 			) {
 				$block--;
 			}
-			//echo 'BLOCK: ' . $block . PHP_EOL;
+			//echo 'BLOCK: ' . var_export($items, true) . PHP_EOL;
 
 			if (!empty($items) && $block === 0) {
 				if ($items[0] === ':') {
