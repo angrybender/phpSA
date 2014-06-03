@@ -34,17 +34,17 @@ abstract class ParentChecker {
 
 	protected function set_error($line)
 	{
-		/*Report::getInstance()->addError(
-			$this->error_message,
-			get_class($this),
-			$line
-		);*/
 		$this->errors_line[] = $line;
 	}
 
 	public function get_errors()
 	{
 		return array_unique($this->errors_line);
+	}
+
+	public function get_error_message()
+	{
+		return $this->error_message;
 	}
 
 	/**

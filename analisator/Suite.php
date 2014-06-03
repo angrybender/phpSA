@@ -191,8 +191,15 @@ class Suite {
 
 		try {
 			foreach ($this->checkers as $checker) {
+				/** @var \Analisator\ParentChecker $checker_object */
 				$checker_object = new $checker($tokens, $file_path);
-				unset($checker_object);
+
+				$errors = $checker_object->get_errors();
+				$msg = $checker_object->get_error_message();
+				$name = get_class($checker_object);
+				foreach ($errors as $error_line) {
+					$this->reporter->addError($msg, $name, $error_line);
+				}
 			}
 
 			$this->print_result();
