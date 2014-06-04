@@ -19,8 +19,18 @@ class AST
 	{
 		$result = array();
 
-		if (is_object($nodes) && isset($nodes->stmts)) {
-			return self::find_tree_by_root($nodes->stmts, $find_class_name);
+		if (is_object($nodes)) {
+			// раскрываем в массив все под деревья, содержащие AST
+			$tmp_nodes = array();
+			foreach ($nodes->getSubNodeNames() as $sub_node) {
+				if (is_object($nodes->{$sub_node})) {
+					$tmp_nodes[] = $nodes->{$sub_node};
+				}
+				elseif (is_array($nodes->{$sub_node})) {
+					$tmp_nodes = array_merge($tmp_nodes, $nodes->{$sub_node});
+				}
+			}
+			$nodes = $tmp_nodes;
 		}
 		elseif (!is_array($nodes)) {
 			return array();
@@ -33,7 +43,7 @@ class AST
 				if ($is_first) break;
 			}
 
-			if ($deep && !is_scalar($node) && !($node instanceof \PHPParser_Node_Scalar)) {
+			if ($deep && !($node instanceof \PHPParser_Node_Scalar)) {
 				$result = array_merge($result, self::find_tree_by_root($node, $find_class_name));
 				if ($is_first) break;
 			}
