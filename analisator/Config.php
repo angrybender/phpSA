@@ -66,6 +66,7 @@ class Config {
 	private $config;
 	public $is_all_checkers_disabled = false;
 	public $status_checkers_by_class_name = array();
+	public $syntax_error = array();
 
 	public function load()
 	{
@@ -97,6 +98,15 @@ class Config {
 			}
 		}
 		$this->status_checkers_by_class_name = $_checkers;
+
+		// политика проверка синтаксиса
+		if (!isset($configs['syntax_error'])) {
+			$configs['syntax_error'] = array(
+				'print' => true
+			);
+		}
+
+		$this->syntax_error = $configs['syntax_error'];
 
 		$this->config = $configs;
 	}

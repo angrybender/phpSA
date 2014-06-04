@@ -181,13 +181,24 @@ class Suite {
 	/**
 	 * анализ файла
 	 * @param $file_path
+	 * @return int
 	 */
 	protected function run($file_path)
 	{
 		//file_put_contents('log.txt', $file_path.PHP_EOL, FILE_APPEND);
 
 		$code = file_get_contents($file_path);
-		$tokens = \Core\Tokenizer::parser($code);
+		try {
+			$tokens = \Core\Tokenizer::parser($code);
+		}
+		catch (\PHPParser_Error $e) {
+			if ($this->config->syntax_error['print']) {
+				$this->reporter->addError($e->getMessage(), 'PHP Parser', 0);
+			}
+
+			$this->print_result(true);
+			return 0;
+		}
 
 		try {
 			foreach ($this->checkers as $checker) {
@@ -202,10 +213,6 @@ class Suite {
 				}
 			}
 
-			$this->print_result();
-		}
-		catch (\PHPParser_Error $e) {
-			// PHPParser очень нестабильно ищет ошибки в пхп коде, когда он смешен с хтмл
 			$this->print_result();
 		}
 		catch (\Exception $e) {
