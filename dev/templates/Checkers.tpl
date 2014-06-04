@@ -9,9 +9,7 @@ class %NAME% extends \Analisator\ParentChecker
 
 	protected $error_message = '';
 
-	protected $extractor = ''; // класс-извлекатель нужных блоков
-
-	public function check($code, $full_tokens)
+	public function check($nodes)
 	{
 
 	}
