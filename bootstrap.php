@@ -19,6 +19,7 @@ include 'analisator/Report.php';
 include 'analisator/Config.php';
 include 'analisator/Suite.php';
 
+include 'core/Repository.php';
 include 'core/AST.php';
 include 'core/Tokenizer.php';
 

@@ -5,8 +5,8 @@ namespace Core;
  * @author k.vagin
  */
 
-class AST {
-
+class AST
+{
 	/**
 	 * ищет заданное поддерево по имени класса корневого узла искомого поддерева
 	 * @param $nodes
@@ -55,10 +55,91 @@ class AST {
 		}
 
 		if ($nodes instanceof \PHPParser_NodeAbstract) {
-			return $nodes->getAttribute('startLine');
+			return $nodes->getLine();
 		}
 		else {
 			throw new \Exception("unknow node type");
 		}
+	}
+
+	/**
+	 * сравнивает 2 дерева с учетом порядка агрументов тех операторов, для которых порядок не важен
+	 * @param \PHPParser_Node|\PHPParser_Node[] $tree_a
+	 * @param $tree_b
+	 * @return bool
+	 */
+	public static function compare_trees($tree_a, $tree_b)
+	{
+		foreach ($tree_a as $i => $node_a) {
+
+			if (!array_key_exists($i, $tree_b)) {
+				return false;
+			}
+			/** @var \PHPParser_Node $node_b */
+			$node_b = $tree_b[$i];
+
+			if (is_scalar($node_a)) {
+				if (!is_scalar($node_b) || $node_b != $node_a) {
+					return false;
+				}
+
+				continue;
+			}
+
+			// fixme вероятно проверка на массив не нужна
+			/*if (is_array($node_a)) {
+				if (!is_array($node_b) || (serialize($node_b) != serialize($node_a))) {
+					return false;
+				}
+
+				continue;
+			}*/
+
+			if ($node_a === null && $node_b === null) {
+				return true;
+			}
+
+			$sub_nodes = $node_a->getSubNodeNames();
+			$t = array_diff_assoc($sub_nodes, $node_b->getSubNodeNames());
+
+			if (!empty($t)) {
+				return false;
+			}
+
+			$type = $node_a->getType();
+			if ($type !== $node_b->getType()) {
+				return false;
+			}
+
+			$identical = true;
+			foreach ($sub_nodes as $sub_node_name) {
+
+				if (is_scalar($node_a->{$sub_node_name})) {
+					$identical = $node_a->{$sub_node_name} == $node_b->{$sub_node_name};
+				}
+				else {
+					$identical = self::compare_trees(
+						is_array($node_a->{$sub_node_name}) ? $node_a->{$sub_node_name} : array($node_a->{$sub_node_name}),
+						is_array($node_b->{$sub_node_name}) ? $node_b->{$sub_node_name} : array($node_b->{$sub_node_name})
+					);
+				}
+
+				if (!$identical) {
+					break;
+				}
+			}
+
+			// сравнение с учетом коммутативности операторов, в случае если прямое сравнение провалилось
+			if (!$identical && in_array($type, \Core\Repository::$commutative_operators_Node_type)) {
+				$identical = self::compare_trees(array($node_a->right), array($node_b->left));
+				$identical = $identical && self::compare_trees(array($node_a->left), array($node_b->right));
+			}
+
+			if (!$identical) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 } 

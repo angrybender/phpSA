@@ -1,4 +1,6 @@
 <?php
+namespace Core;
+
 /**
  * информация о языке
  * @author k.vagin
@@ -53,5 +55,29 @@ class Repository
 	// такие функции, которые результат пишут в переданную им переменную, но принимают бесконечное кол-во аргументов по ссылке
 	public static $function_callback_into_variable_infinity = array(
 		'sscanf' => 3, // с третьего аргумента и дальше
+	);
+
+	/**
+	 *коммутативные операторы
+	 */
+	public static $commutative_operators_Node_type = array(
+		'Expr_Plus',
+		'Expr_Mul',
+
+		'Expr_BooleanAnd',
+		'Expr_BooleanOr',
+
+		'Expr_LogicalAnd',
+		'Expr_LogicalXor',
+		'Expr_LogicalOr',
+
+		'Expr_BitwiseOr',
+		'Expr_BitwiseXor',
+		'Expr_BitwiseAnd',
+
+		'Expr_NotEqual',
+		'Expr_NotIdentical',
+		'Expr_Identical',
+		'Expr_Equal',
 	);
 }
