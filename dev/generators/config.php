@@ -5,7 +5,10 @@
  */
 
 file_put_contents(__DIR__ . '/../../config.ini',
-"
+"; выводить ли синтаксические ошибки?
+[syntax_error]
+print = true
+
 ; чекеры надо пропустить?
 [skipped_politics]
 all = true
