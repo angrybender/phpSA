@@ -216,8 +216,7 @@ class Suite {
 			$this->print_result();
 		}
 		catch (\Exception $e) {
-			echo PHP_EOL, $file_path, PHP_EOL;  // todo
-			echo $e->getMessage(), PHP_EOL; // todo
+			$this->reporter->addError($e->getMessage(), $e->getFile(), $e->getLine());
 			$this->print_result(true);
 		}
 	}
