@@ -4,4 +4,4 @@
  * @author k.vagin
  */
 
-$a = ($a + 1);
+$a = $a && $b && $c;
