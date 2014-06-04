@@ -4,7 +4,7 @@
  * @author pdepend
  */
 
-private function collectMetrics()
+function collectMetrics()
 {
 	if ($this->coupling === null) {
 		throw new RuntimeException('Missing Coupling analyzer.');

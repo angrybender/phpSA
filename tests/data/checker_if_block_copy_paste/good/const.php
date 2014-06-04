@@ -4,7 +4,7 @@
  * @author k.vagin
  */
 
-public function getImages() {
+function getImages() {
 
 	$images = array();
 	if (isset($this->_headerFooterImages[self::IMAGE_HEADER_LEFT])) 	$images[self::IMAGE_HEADER_LEFT] = 		$this->_headerFooterImages[self::IMAGE_HEADER_LEFT];
