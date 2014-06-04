@@ -13,10 +13,17 @@ class AST
 	 * @param $find_class_name имя класса ноды, которую ищет
 	 * @param bool $deep если ложь то возвращает без рекурсии
 	 * @param bool $is_first если истина то возращает первый найденный
+	 * @param int $recursion_deep флаг для контроля глубины рекурсии
+	 * @throws \Exception
 	 * @return \PHPParser_Node[]
 	 */
-	public static function find_tree_by_root($nodes, $find_class_name, $deep = true, $is_first = false)
+	public static function find_tree_by_root($nodes, $find_class_name, $deep = true, $is_first = false, $recursion_deep = 0)
 	{
+		if ($recursion_deep > 1500) {
+			// необходимый костыль ограничения глубины рекурсивного вызова
+			throw new \Exception("Can't find subtree - too deep recursion");
+		}
+
 		$result = array();
 
 		if (is_object($nodes)) {
@@ -44,7 +51,7 @@ class AST
 			}
 
 			if ($deep && !($node instanceof \PHPParser_Node_Scalar)) {
-				$result = array_merge($result, self::find_tree_by_root($node, $find_class_name));
+				$result = array_merge($result, self::find_tree_by_root($node, $find_class_name, $recursion_deep+1));
 				if ($is_first) break;
 			}
 		}
@@ -106,8 +113,17 @@ class AST
 				continue;
 			}*/
 
-			if ($node_a === null && $node_b === null) {
-				return true;
+			if ($node_a === null) {
+				if ($node_b === null) {
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+
+			if ($node_b === null || !is_object($node_b)) {
+				return false;
 			}
 
 			$sub_nodes = $node_a->getSubNodeNames();
