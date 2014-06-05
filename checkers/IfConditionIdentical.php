@@ -15,8 +15,9 @@ class IfConditionIdentical extends \Analisator\ParentChecker
 	public function check($nodes)
 	{
 		$if_nodes = \Core\AST::find_tree_by_root($nodes, self::NODE_NAME);
-		$trees = array();
+
 		foreach ($if_nodes as $if_root) {
+			$trees = array();
 			if (isset($if_root->elseifs) && count($if_root->elseifs) > 0) {
 				$trees[] = $if_root->cond;
 				$trees = array_merge($trees, array_map(function($obj) {
