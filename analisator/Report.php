@@ -74,12 +74,22 @@ class Report {
 	 */
 	public function addError($message="", $checker="", $line=0)
 	{
-		$this->errors[] = array(
-			'file' => $this->current_file,
-			'message' => $message,
-			'checker' => $checker,
-			'line' => $line
-		);
+		if (isset($this->errors[$this->current_file . '_' . $checker])) {
+			if (is_array($this->errors[$this->current_file . '_' . $checker]['line'])) {
+				$this->errors[$this->current_file . '_' . $checker]['line'][] = $line;
+			}
+			else {
+				$this->errors[$this->current_file . '_' . $checker]['line'] = array($this->errors[$this->current_file . '_' . $checker]['line'], $line);
+			}
+		}
+		else {
+			$this->errors[$this->current_file . '_' . $checker] = array(
+				'file' => $this->current_file,
+				'message' => $message,
+				'checker' => $checker,
+				'line' => $line
+			);
+		}
 
 		$this->cur_err_count = $this->cur_err_count + is_array($line) ? count($line) : 1;
 	}
@@ -96,7 +106,10 @@ class Report {
 
 	public function getRawErrors()
 	{
-		return $this->errors;
+		return array_map(function($value) {
+			$value['line'] =  join(', ', $value['line']);
+			return $value;
+		}, $this->errors);
 	}
 
 	public function getErrCounts()
