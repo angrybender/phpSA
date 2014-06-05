@@ -21,7 +21,6 @@ class BothArgumentsIdentical extends \Analisator\ParentChecker
 	private $operators = array(
 		'PHPParser_Node_Expr_Assign' => array('var', 'expr'),
 		'PHPParser_Node_Expr_BitwiseAnd' => null,
-		'PHPParser_Node_Expr_BitwiseNot' => null,
 		'PHPParser_Node_Expr_BitwiseOr' => null,
 		'PHPParser_Node_Expr_BitwiseXor' => null,
 		'PHPParser_Node_Expr_BooleanAnd' => null,
@@ -54,15 +53,15 @@ class BothArgumentsIdentical extends \Analisator\ParentChecker
 			$found = \Core\AST::find_tree_by_root($nodes, $class_name);
 
 			foreach ($found as $tree) {
-				$this->operator_check($tree->{$operand_nodes_name[0]}, $tree->{$operand_nodes_name[1]});
+				$this->operator_check($tree->{$operand_nodes_name[0]}, $tree->{$operand_nodes_name[1]}, $tree->getLine());
 			}
 		}
 	}
 
-	protected function operator_check($tree_a, $tree_b)
+	protected function operator_check($tree_a, $tree_b, $line)
 	{
 		if (\Core\AST::compare_trees(array($tree_a), array($tree_b))) {
-			$this->set_error(\Core\AST::get_line_of_tree($tree_a));
+			$this->set_error($line);
 		}
 	}
 }
