@@ -46,15 +46,16 @@ class BothArgumentsIdentical extends \Analisator\ParentChecker
 
 	public function check($nodes)
 	{
-		foreach ($this->operators as $class_name => $operand_nodes_name) {
+		$nodes_type = array_keys($this->operators);
+		$found = \Core\AST::find_tree_by_root($nodes, $nodes_type);
+
+		foreach ($found as $tree) {
+			$operand_nodes_name = $this->operators[get_class($tree)];
 			if ($operand_nodes_name === null) {
 				$operand_nodes_name = array('left', 'right');
 			}
-			$found = \Core\AST::find_tree_by_root($nodes, $class_name);
 
-			foreach ($found as $tree) {
-				$this->operator_check($tree->{$operand_nodes_name[0]}, $tree->{$operand_nodes_name[1]}, $tree->getLine());
-			}
+			$this->operator_check($tree->{$operand_nodes_name[0]}, $tree->{$operand_nodes_name[1]}, $tree->getLine());
 		}
 	}
 

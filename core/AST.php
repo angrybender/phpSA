@@ -10,7 +10,7 @@ class AST
 	/**
 	 * ищет заданное поддерево по имени класса корневого узла искомого поддерева
 	 * @param $nodes
-	 * @param $find_class_name имя класса ноды, которую ищет
+	 * @param string|array $find_class_name имя класса ноды, которую ищет
 	 * @param bool $deep если ложь то возвращает без рекурсии
 	 * @param bool $is_first если истина то возращает первый найденный
 	 * @param int $recursion_deep флаг для контроля глубины рекурсии
@@ -45,9 +45,16 @@ class AST
 
 		foreach ($nodes as $node) {
 
-			if (is_object($node) && get_class($node) === $find_class_name) {
-				$result[] = $node;
-				if ($is_first) break;
+			if (is_object($node)) {
+				$node_class = get_class($node);
+				if ($node_class === $find_class_name) {
+					$result[] = $node;
+					if ($is_first) break;
+				}
+				elseif (is_array($find_class_name) && in_array($node_class, $find_class_name)) {
+					$result[] = $node;
+					if ($is_first) break;
+				}
 			}
 
 			if ($deep && !($node instanceof \PHPParser_Node_Scalar)) {
