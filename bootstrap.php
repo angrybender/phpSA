@@ -20,8 +20,15 @@ include 'analisator/Config.php';
 include 'analisator/Suite.php';
 
 include 'core/Repository.php';
-include 'core/AST.php';
 include 'core/Tokenizer.php';
+include 'core/AST.php';
+
+include 'core/flow/Flow.php';
+include 'core/flow/VarLimits.php';
+include 'core/flow/Solver.php';
+include 'core/flow/ExprFalse.php';
+include 'core/flow/ExprTrue.php';
+include 'core/flow/ExprEq.php';
 
 spl_autoload_register(function($class)
 {

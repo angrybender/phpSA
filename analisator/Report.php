@@ -70,7 +70,7 @@ class Report {
 	 * вставляет ошибку
 	 * @param string $message
 	 * @param string $checker
-	 * @param int|array $line	если массив, то соответствующе оформляется
+	 * @param int|array $line если массив, то соответствующе оформляется
 	 */
 	public function addError($message="", $checker="", $line=0)
 	{
@@ -107,6 +107,9 @@ class Report {
 	public function getRawErrors()
 	{
 		return array_map(function($value) {
+			if (is_scalar($value['line'])) {
+				return $value;
+			}
 			$value['line'] =  join(', ', $value['line']);
 			return $value;
 		}, $this->errors);

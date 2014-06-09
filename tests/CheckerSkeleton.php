@@ -23,8 +23,15 @@ class CheckerSkeleton extends PHPUnit_Framework_TestCase
 		$checker_name = "\\Checkers\\{$this->class_name}";
 		$checker = new $checker_name($code, $file_name);
 
-		$errors = $checker->get_errors();
-		return count($errors) == 0;
+		$custom_errors = $checker->get_custom_errors();
+		if (empty($custom_errors)) {
+			$errors = $checker->get_errors();
+		}
+		else {
+			$errors = array();
+		}
+
+		return count($errors) === 0 && count($custom_errors) === 0;
 	}
 
 	/**

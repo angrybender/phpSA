@@ -80,4 +80,58 @@ class Repository
 		'Expr_Identical',
 		'Expr_Equal',
 	);
+
+	/**
+	 * булевы операторы
+	 * @var array
+	 */
+	public static $boolean_operators_Node_type = array(
+		'Expr_BooleanAnd',
+		'Expr_BooleanOr',
+		'Expr_BooleanNot',
+	);
+
+	/**
+	 * операторы сравнения
+	 * @var array
+	 */
+	public static $compare_operators_Node_type = array(
+		'Expr_Greater', 'Expr_SmallerOrEqual',
+		'Expr_GreaterOrEqual', 'Expr_Smaller',
+		'Expr_Smaller', 'Expr_GreaterOrEqual',
+		'Expr_SmallerOrEqual', 'Expr_Greater',
+		'Expr_NotEqual'			, 'Expr_Equal',
+		'Expr_NotIdentical'		, 'Expr_Identical',
+		'Expr_Equal'			, 'Expr_NotEqual',
+		'Expr_Identical'		, 'Expr_NotIdentical',
+	);
+
+	/**
+	 * операторы равенства
+	 */
+	public static $compare_eq_operators_Node_type = array(
+		'Expr_NotEqual'			, 'Expr_Equal',
+		'Expr_NotIdentical'		, 'Expr_Identical',
+		'Expr_Equal'			, 'Expr_NotEqual',
+		'Expr_Identical'		, 'Expr_NotIdentical',
+	);
+
+	/**
+	 * обращение операторов при применении к нему NOT
+	 * @var array
+	 */
+	public static $reverse_operators_rules = array(
+		'Expr_BooleanAnd' 		=> 'Expr_BooleanOr',
+		'Expr_BooleanOr' 		=> 'Expr_BooleanAnd',
+
+		'Expr_Greater'			=> 'Expr_SmallerOrEqual',
+		'Expr_GreaterOrEqual'	=> 'Expr_Smaller',
+		'Expr_Smaller'			=> 'Expr_GreaterOrEqual',
+		'Expr_SmallerOrEqual'	=> 'Expr_Greater',
+
+		'Expr_NotEqual'			=> 'Expr_Equal',
+		'Expr_NotIdentical'		=> 'Expr_Identical',
+		'Expr_Equal'			=> 'Expr_NotEqual',
+		'Expr_Identical'		=> 'Expr_NotIdentical',
+	);
 }

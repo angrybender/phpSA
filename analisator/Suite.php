@@ -205,11 +205,19 @@ class Suite {
 				/** @var \Analisator\ParentChecker $checker_object */
 				$checker_object = new $checker($tokens, $file_path);
 
-				$errors = $checker_object->get_errors();
-				$msg = $checker_object->get_error_message();
+				$custom_errors = $checker_object->get_custom_errors();
 				$name = get_class($checker_object);
-				foreach ($errors as $error_line) {
-					$this->reporter->addError($msg, $name, $error_line);
+				if (empty($custom_errors)) {
+					$errors = $checker_object->get_errors();
+					$msg = $checker_object->get_error_message();
+					foreach ($errors as $error_line) {
+						$this->reporter->addError($msg, $name, $error_line);
+					}
+				}
+				else {
+					foreach ($custom_errors as $error) {
+						$this->reporter->addError($error['message'], $name, $error['line']);
+					}
 				}
 			}
 

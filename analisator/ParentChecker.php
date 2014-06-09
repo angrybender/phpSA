@@ -19,6 +19,16 @@ abstract class ParentChecker {
 
 	protected $error_message = ''; // текст ворнинга
 
+	/**
+	 * кастомные сообщения об ошибках
+	 * array(
+	 *  	message =>
+	 * 		line =>
+	 * )
+	 * @var bool
+	 */
+	protected $custom_errors = array();
+
 	protected $errors_line = array();
 
 	/**
@@ -40,6 +50,11 @@ abstract class ParentChecker {
 	public function get_errors()
 	{
 		return array_unique($this->errors_line);
+	}
+
+	public function get_custom_errors()
+	{
+		return $this->custom_errors;
 	}
 
 	public function get_error_message()
