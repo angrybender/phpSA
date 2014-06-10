@@ -106,40 +106,7 @@ class Solver
 			return false;
 		}
 
-		if ($expr_type === 'Expr_BooleanOr' || !in_array($type, \Core\Repository::$compare_eq_operators_Node_type)) {
-			return \Core\AST::compare_trees(array($tree_a), array($variable));
-		}
-
-		// ищем совпадение по любому операнду оператора сравнения
-		$tree_a_side = 'left';
-		$is_eq = \Core\AST::compare_trees(array($tree_a->left), array($variable->left));
-		if (!$is_eq) {
-			$is_eq = \Core\AST::compare_trees(array($tree_a->right), array($variable->left));
-			$tree_a_side = 'right';
-		}
-
-		if (!$is_eq) {
-			$is_eq = \Core\AST::compare_trees(array($tree_a->right), array($variable->right));
-			$tree_a_side = 'right';
-		}
-
-		if (!$is_eq) {
-			$is_eq = \Core\AST::compare_trees(array($tree_a->left), array($variable->right));
-			$tree_a_side = 'left';
-		}
-
-		if (!$is_eq) {
-			// точно не равны
-			return false;
-		}
-
-		// выбираем противоположные ветви для сравнения неодинаковых операндов
-		$tree_a_neg_side = ($tree_a_side === 'left') ? 'right' : 'left';
-		$tree_b_neg_side = $tree_a_side;
-
-		if (!\Core\AST::compare_trees(array($tree_a->{$tree_a_neg_side}), array($variable->{$tree_b_neg_side}))) {
-			throw new Exceptions\ExprEq(\Core\Tokenizer::printer($variable) . ' AND ' . \Core\Tokenizer::printer($tree_a));
-		}
+		return \Core\AST::compare_trees(array($tree_a), array($variable));
 	}
 
 	/**
