@@ -6,7 +6,6 @@
 	..
 	$var = 456; // зачем дважды?
  *
- * из за большого количества ложных срабатываний оставил обработку только самых кондовых случаев
  *
  * @author k.vagin
  */
@@ -14,7 +13,7 @@
 namespace Checkers;
 
 
-class VarReAsset
+class VarReAsset extends \Analisator\ParentChecker
 {
 	protected $types = array(
 		CHECKER_HEURISTIC
@@ -22,184 +21,90 @@ class VarReAsset
 
 	protected $error_message = 'Переменная переобозначается ниже, а до этого не используется';
 
-	protected $variables_index = array();
-	private $suspicious_var = array();
+	public function check($nodes)
+	{
+		$blocks = \Core\AST::find_tree_by_root($nodes, array(
+			'PHPParser_Node_Stmt_ClassMethod',
+			'PHPParser_Node_Stmt_Function',
+			'PHPParser_Node_Expr_Closure',
+			'PHPParser_Node_Stmt_If',
+			'PHPParser_Node_Stmt_For',
+			'PHPParser_Node_Stmt_Foreach',
+			'PHPParser_Node_Stmt_While',
+		));
 
+		if (empty($blocks)) {
+			$blocks = array($nodes);
+		}
 
-	private $block_head = array(
-		'T_IF',
-		'T_FOR',
-		'T_FOREACH',
-		'T_SWITCH',
-		'T_CASE',
-		'T_WHILE',
-		'T_TRY',
-		'T_CATCH'
-	);
+		foreach ($blocks as $nodes) {
+			$this->analize_sub_code($nodes);
+		}
+	}
 
 	/**
-	 * анализирует отдельный блок кода
-	 * ошибки добавляет сама
-	 *
-	 * @param $tokens
+	 * @param \PHPParser_Node[]|\PHPParser_Node $nodes
+	 */
+	protected function analize_sub_code($nodes)
+	{
+		$suspicious_expr = \Core\AST::find_tree_by_root($nodes, 'PHPParser_Node_Expr_Assign', false);
+		$suspicious_operand = array();
+		foreach ($suspicious_expr as $expr) {
+			if (($prev_line = $this->in_array_find($suspicious_operand, $expr->var)) && $this->check_behavior($expr, $nodes, $prev_line)) {
+				$this->set_error($expr->getLine());
+			}
+			else {
+				$suspicious_operand[] = $expr->var;
+			}
+		}
+	}
+
+	/**
+	 * проверяем нет ли тут неопределенного поведения и ложного срабатывания
+	 * @param \PHPParser_Node_Expr_Assign $expression
+	 * @param \PHPParser_Node[]|\PHPParser_Node $nodes
+	 * @param int $prev_line
+	 * @return int
+	 */
+	protected function check_behavior(\PHPParser_Node_Expr_Assign $expression, $nodes, $prev_line = 0)
+	{
+		// проверка на вхождение в массивы и тд
+		if (count(\Core\AST::find_subtrees($expression->expr, $expression->var, true)) > 0) {
+			return false;
+		}
+
+		// проверка на использование между присваиваниями
+		foreach ($nodes as $node) {
+			if (!is_object($node)) {
+				continue;
+			}
+
+			if ($node->getLine() <= $prev_line || $node->getLine() >= $expression->getLine()) {
+				continue;
+			}
+
+			if (count(\Core\AST::find_subtrees($node, $expression->var, true)) > 0) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * @param @param \PHPParser_Node[] $arr
+	 * @param \PHPParser_Node $tree
 	 * @return bool
 	 */
-	protected function analize_code($tokens)
+	protected function in_array_find(array $arr, $tree)
 	{
-		$this->variables_index = array();
-		$this->suspicious_var = array();
-
-		$_args = \Variables::get_all_vars_in_expression($tokens['declaration']);
-
-		$variables = \Variables::get_all_vars_in_expression($tokens['body']);
-		$variables = array_unique(array_merge($_args, $variables));
-
-		if (empty($variables)) {
-			return true;
-		}
-
-		// пропускаем предопределенные
-		$variables = array_diff($variables, \Repository::$predefined_vars);
-
-		// индекс переменных:
-		$this->build_variables_index($variables, $tokens['body']);
-
-		// игнорируем переменные, сразу инициализированные как массивы:
-		$var_by_array = array();
-		foreach ($this->variables_index as $var_name => $arr_var_pos) {
-			foreach ($arr_var_pos as $var_pos) {
-				if (isset($tokens['body'][$var_pos+1])
-					&& $tokens['body'][$var_pos+1] === '['
-				) {
-					$var_by_array[] = $var_name;
-					break;
-				}
-			}
-		}
-		$variables = array_diff($variables, $var_by_array);
-
-		// пропускаем все, которые встречаются 1 раз
-		foreach ($variables as $i => $var_name) {
-			if (count($this->variables_index[$var_name]) < 2) {
-				unset($variables[$i]);
+		foreach ($arr as $node)
+		{
+			if (\Core\AST::compare_trees(array($node), array($tree))) {
+				return $node->getLine();
 			}
 		}
 
-		// пропускаем внутри ветвлений if, циклов и тд
-		$variables = $this->variable_inside_block($variables, $tokens['body']);
-
-		foreach ($variables as $i => $var_name) {
-			$this->process_var($var_name, $tokens['body']);
-		}
-
-		foreach ($this->suspicious_var as $var_name) {
-			$this->line[] = @$tokens['body'][$this->variables_index[$var_name][0]][2];
-		}
-
-		$this->line = array_filter($this->line);
-	}
-
-	/**
-	 * переменные вунтри блочных операторов и if
-	 * @param array $variables
-	 * @param array $tokens
-	 * @return array
-	 */
-	private function variable_inside_block(array $variables, array $tokens)
-	{
-		foreach ($variables as $i => $var_name) {
-
-			foreach ($this->variables_index[$var_name] as $var_pos)
-			{
-				for ($j = $var_pos-1; $j>0; $j--) {
-					if ($tokens[$j] === '{'
-						|| is_array($tokens[$j]) && in_array($tokens[$j][0], $this->block_head)
-					) {
-						unset($variables[$i]);
-						break;
-					}
-				}
-			}
-
-		}
-
-		return $variables;
-	}
-
-	/**
-	 * строит индекс - имя_переменной - массив позиций
-	 * @param array $variables
-	 * @param array $tokens
-	 */
-	protected function build_variables_index(array $variables, array $tokens)
-	{
-		foreach ($variables as $var_name) {
-			$_tokens = $tokens;
-			$this->variables_index[$var_name] = array();
-			$prev_pos = 0;
-			while (true) {
-				$var_pos = \Tokenizer::token_ispos($_tokens, $var_name, 'T_VARIABLE');
-				if ($var_pos === false) {
-					break;
-				}
-
-				$_tokens = array_slice($_tokens, $var_pos + 1);
-
-				$var_pos = $var_pos + $prev_pos;
-
-				$this->variables_index[$var_name][] = $var_pos;
-
-				$prev_pos = $var_pos + 1;
-			}
-		}
-	}
-
-	/**
-	 * проверить переменную
-	 * @param string $var_name
-	 * @param array $tokens
-	 */
-	protected function process_var($var_name, array $tokens)
-	{
-		$code_length = count($tokens);
-		foreach ($this->variables_index[$var_name] as $i => $var_position) {
-			if (!isset($this->variables_index[$var_name][$i+1])) break;
-
-			$curr_pos = $var_position;
-			$next_pos = $this->variables_index[$var_name][$i+1];
-
-			// если в рядом стоящих позициях переменной что то присваивается - алерт:
-			if (!isset($tokens[$next_pos+1])) {
-				// хрень какая то но надо
-				break;
-			}
-
-			$is_suspicious = false;
-			if ($tokens[$curr_pos+1] === '='
-				&& $tokens[$next_pos+1] === '='
-			) {
-				$is_suspicious = true;
-			}
-
-			// если в первом присваинвании нет вызова ф-ии то ок
-			for ($j = $next_pos+1; $j <= $code_length - 1; $j++) {
-				if ($tokens[$j] === ';' || $tokens[$j] === '}') {
-					break;
-				}
-
-				if (is_array($tokens[$j])
-					&& $tokens[$j][0] === 'T_STRING'
-					&& $tokens[$j+1] === '('
-				) {
-					$is_suspicious = false;
-					break;
-				}
-			}
-
-			if ($is_suspicious) {
-				$this->suspicious_var[] = $var_name;
-			}
-		}
-
+		return false;
 	}
 } 
