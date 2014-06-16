@@ -91,9 +91,10 @@ class AST
 	 * NB. не понимает много подряд идущих операторов, вида $a && $b && $c, в силу того, что операнды оказываются в разных поддеревьях
 	 * @param \PHPParser_Node|\PHPParser_Node[] $tree_a
 	 * @param $tree_b
+	 * @param bool $strict
 	 * @return bool
 	 */
-	public static function compare_trees($tree_a, $tree_b)
+	public static function compare_trees($tree_a, $tree_b, $strict = false)
 	{
 		foreach ($tree_a as $i => $node_a) {
 
@@ -110,15 +111,6 @@ class AST
 
 				continue;
 			}
-
-			// fixme вероятно проверка на массив не нужна
-			/*if (is_array($node_a)) {
-				if (!is_array($node_b) || (serialize($node_b) != serialize($node_a))) {
-					return false;
-				}
-
-				continue;
-			}*/
 
 			if ($node_a === null) {
 				if ($node_b === null) {
@@ -154,7 +146,8 @@ class AST
 				else {
 					$identical = self::compare_trees(
 						is_array($node_a->{$sub_node_name}) ? $node_a->{$sub_node_name} : array($node_a->{$sub_node_name}),
-						is_array($node_b->{$sub_node_name}) ? $node_b->{$sub_node_name} : array($node_b->{$sub_node_name})
+						is_array($node_b->{$sub_node_name}) ? $node_b->{$sub_node_name} : array($node_b->{$sub_node_name}),
+						$strict
 					);
 				}
 
@@ -164,7 +157,7 @@ class AST
 			}
 
 			// сравнение с учетом коммутативности операторов, в случае если прямое сравнение провалилось
-			if (!$identical && in_array($type, \Core\Repository::$commutative_operators_Node_type)) {
+			if (!$strict && !$identical && in_array($type, \Core\Repository::$commutative_operators_Node_type)) {
 				$identical = self::compare_trees(array($node_a->right), array($node_b->left));
 				$identical = $identical && self::compare_trees(array($node_a->left), array($node_b->right));
 			}
@@ -175,5 +168,29 @@ class AST
 		}
 
 		return true;
+	}
+
+	/**
+	 * @param \PHPParser_Node|\PHPParser_Node[] $nodes
+	 * @param \PHPParser_Node $needle_tree
+	 * @param bool $is_first
+	 * @return \PHPParser_Node[]
+	 */
+	public static function find_subtrees($nodes, \PHPParser_Node $needle_tree, $is_first = false)
+	{
+		$class = get_class($needle_tree);
+		$preliminaries = self::find_tree_by_root($nodes, $class);
+
+		$result = array();
+		foreach ($preliminaries as $preliminary) {
+			if (self::compare_trees(array($preliminary), array($needle_tree), true)) {
+				$result[] = $preliminary;
+				if ($is_first) {
+					break;
+				}
+			}
+		}
+
+		return $result;
 	}
 } 
