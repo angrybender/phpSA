@@ -4,12 +4,11 @@
  * @author k.vagin
  */
 
-function vb($r)
+function vb($a, $b)
 {
-	$b = $r;
-	$a = $r;
-	$b++;
-	$a = $r;
+	$b = null;
+	unset($b);
+	$b = $a;
 
 	return $a + $b;
 }

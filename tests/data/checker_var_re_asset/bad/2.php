@@ -4,10 +4,10 @@
  * @author k.vagin
  */
 
-function vb()
+function vb($r)
 {
-	$b = 3;
-	$a = 1;
+	$b = $r;
+	$a = $r;
 	$b++;
 	$a = $a;
 

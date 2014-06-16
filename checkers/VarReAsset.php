@@ -19,7 +19,7 @@ class VarReAsset extends \Analisator\ParentChecker
 		CHECKER_HEURISTIC
 	);
 
-	protected $error_message = 'Переменная переобозначается ниже, а до этого не используется';
+	protected $error_message = 'Переобозначение переменной без использования';
 
 	public function check($nodes)
 	{
@@ -47,10 +47,38 @@ class VarReAsset extends \Analisator\ParentChecker
 	 */
 	protected function analize_sub_code($nodes)
 	{
-		$suspicious_expr = \Core\AST::find_tree_by_root($nodes, 'PHPParser_Node_Expr_Assign', false);
 		$suspicious_operand = array();
+
+		// unset считаем за присваивание
+		$suspicious_expr = \Core\AST::find_tree_by_root($nodes, 'PHPParser_Node_Stmt_Unset', false);
 		foreach ($suspicious_expr as $expr) {
-			if (($prev_line = $this->in_array_find($suspicious_operand, $expr->var)) && $this->check_behavior($expr, $nodes, $prev_line)) {
+			$suspicious_operand = array_merge($suspicious_operand, $expr->vars);
+		}
+
+		$suspicious_expr = \Core\AST::find_tree_by_root($nodes, 'PHPParser_Node_Expr_Assign', false);
+		foreach ($suspicious_expr as $expr) {
+
+			// первоначальная инициализация всякими false, array() и тд
+
+			if ($expr->expr->getType() === 'Expr_ConstFetch'
+				|| $expr->expr->getType() === 'Scalar_LNumber'
+				|| $expr->expr->getType() === 'Scalar_String'
+			) {
+				continue;
+			}
+			if ($expr->expr->getType() === 'Expr_Array' && empty($expr->expr->items)) {
+				continue;
+			}
+
+			if ($expr->var->getType() === 'Expr_ArrayDimFetch' && $expr->var->dim === null) {
+				$where = $this->in_array_find($suspicious_operand, $expr->var, false);
+				$suspicious_operand[$where] = $expr->var->var; // подменяем последнее вхождение чтобы ловить ситуацию из /tests/data/checker_var_re_asset/bad/array.php
+				continue;
+			}
+
+			if (($prev_line = $this->in_array_find($suspicious_operand, $expr->var))
+				&& $this->check_behavior($expr, $nodes, $prev_line)
+				&& $prev_line < $expr->getLine()) {
 				$this->set_error($expr->getLine());
 			}
 			else {
@@ -74,6 +102,9 @@ class VarReAsset extends \Analisator\ParentChecker
 		}
 
 		// проверка на использование между присваиваниями
+		if (is_object($nodes) && in_array('stmts', $nodes->getSubNodeNames())) {
+			$nodes = $nodes->stmts;
+		}
 		foreach ($nodes as $node) {
 			if (!is_object($node)) {
 				continue;
@@ -83,7 +114,23 @@ class VarReAsset extends \Analisator\ParentChecker
 				continue;
 			}
 
-			if (count(\Core\AST::find_subtrees($node, $expression->var, true)) > 0) {
+			// ищет операнд как аргумент вызова функции:
+
+			if (count(\Core\AST::find_subtrees($node, new \PHPParser_Node_Arg($expression->var, false), true)) > 0) {
+				return false;
+			}
+
+			if (count(\Core\AST::find_subtrees($node, new \PHPParser_Node_Arg($expression->var, true), true)) > 0) {
+				return false;
+			}
+
+			// ищет как вхождение в условие
+			if (in_array('cond', $node->getSubNodeNames()) && count(\Core\AST::find_subtrees($node->cond, $expression->var, true)) > 0 ) {
+				return false;
+			}
+
+			// ищет в присваивании
+			if ($node->getType() === 'Expr_Assign' && count(\Core\AST::find_subtrees($node->expr, $expression->var, true)) > 0 ) {
 				return false;
 			}
 		}
@@ -92,16 +139,17 @@ class VarReAsset extends \Analisator\ParentChecker
 	}
 
 	/**
-	 * @param @param \PHPParser_Node[] $arr
+	 * @param array $arr
 	 * @param \PHPParser_Node $tree
+	 * @param bool $return_code_line
 	 * @return bool
 	 */
-	protected function in_array_find(array $arr, $tree)
+	protected function in_array_find(array $arr, $tree, $return_code_line = true)
 	{
-		foreach ($arr as $node)
+		foreach ($arr as $i => $node)
 		{
 			if (\Core\AST::compare_trees(array($node), array($tree))) {
-				return $node->getLine();
+				return  $return_code_line ? $node->getLine() : $i;
 			}
 		}
 
