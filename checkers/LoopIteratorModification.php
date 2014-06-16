@@ -7,7 +7,7 @@ class LoopIteratorModification extends \Analisator\ParentChecker
 		CHECKER_ERRORS
 	);
 
-	protected $error_message = 'Внутри тела цикла происходит модификация итератора, возможно стоит изменить инструктцию на while';
+	protected $error_message = 'Внутри тела цикла происходит модификация итератора, возможно стоит изменить инструкцию на while';
 
 	public function check($nodes)
 	{
@@ -22,7 +22,11 @@ class LoopIteratorModification extends \Analisator\ParentChecker
 
 	protected function analize(\PHPParser_Node_Stmt_For $nodes)
 	{
-		$iterator = $nodes->init[0]->var;
+		$iterator = $this->calculate_iterator_var($nodes);
+		if ($iterator === false) {
+			return;
+		}
+
 		$assign = \Core\AST::find_tree_by_root($nodes->stmts, array(
 			'PHPParser_Node_Expr_Assign',
 			'PHPParser_Node_Stmt_Unset',
@@ -51,7 +55,7 @@ class LoopIteratorModification extends \Analisator\ParentChecker
 					$args = array_slice($subtree->args, $arg_pos - 1);
 				}
 
-				if ($this->compare_nodes($args, $iterator)) {
+				if (!empty($args) && $this->compare_nodes($args, $iterator)) {
 					$this->set_error($subtree->getLine());
 				}
 			}
@@ -72,5 +76,24 @@ class LoopIteratorModification extends \Analisator\ParentChecker
 		}
 
 		return false;
+	}
+
+	protected function calculate_iterator_var(\PHPParser_Node_Stmt_For $nodes)
+	{
+		$vars = array();
+		foreach ($nodes->loop as $loop)
+		{
+			if (in_array('var', $loop->getSubNodeNames()) && count(\Core\AST::find_subtrees($nodes->cond, $loop->var, true)) > 0) {
+				$vars[] = $loop->var;
+			}
+		}
+
+
+		if (count($vars) === 1) {
+			return $vars[0];
+		}
+		else {
+			return false;
+		}
 	}
 }
