@@ -1,7 +1,7 @@
 <?php
 namespace Checkers;
 
-class LoopIteratorModification
+class LoopIteratorModification extends \Analisator\ParentChecker
 {
 	protected $types = array(
 		CHECKER_ERRORS
@@ -9,156 +9,68 @@ class LoopIteratorModification
 
 	protected $error_message = 'Внутри тела цикла происходит модификация итератора, возможно стоит изменить инструктцию на while';
 
-	protected $extractor = 'BlocksWithHead';
-	protected $filter = array(
-		'block' => 'T_FOR'
-	); //фильтр для извлекателя
-
-	public function check($code, $full_tokens)
+	public function check($nodes)
 	{
-		$var = $this->get_variable($full_tokens['head']);
+		$blocks = \Core\AST::find_tree_by_root($nodes, array(
+			'PHPParser_Node_Stmt_For',
+		));
 
-		if (!empty($var)) {
-			return !$this->check_var_assets($full_tokens['body'], $var);
+		foreach ($blocks as $block) {
+			$this->analize($block);
 		}
 	}
 
-	/**
-	 * извлечь имя итератора
-	 * @param array $head
-	 * @return string
-	 */
-	private function get_variable(array $head)
+	protected function analize(\PHPParser_Node_Stmt_For $nodes)
 	{
-		$var = '';
+		$iterator = $nodes->init[0]->var;
+		$assign = \Core\AST::find_tree_by_root($nodes->stmts, array(
+			'PHPParser_Node_Expr_Assign',
+			'PHPParser_Node_Stmt_Unset',
+			'PHPParser_Node_Expr_FuncCall',
+		));
 
-		foreach ($head as $i => $token)
-		{
-			if ($var === ''
-				&& is_array($token)
-				&& $token[0] === 'T_VARIABLE'
-				&& isset($head[$i+1])
-				&& ($head[$i+1] === '=' || $head[$i+1] === '<' || $head[$i+1] === '>' || $head[$i+1] === '<=' || $head[$i+1] === '>=')
-			) {
-				$var = $token[1];
-				break;
+		foreach ($assign as $subtree) {
+			if ($subtree->getType() === 'Expr_Assign' && \Core\AST::compare_trees(array($iterator), array($subtree->var), true)) {
+				$this->set_error($subtree->getLine());
+			}
+			elseif ($subtree->getType() === 'Stmt_Unset') {
+				if ($this->compare_nodes($subtree->vars, $iterator)) {
+					$this->set_error($subtree->getLine());
+				}
+			}
+			elseif ($subtree->getType() === 'Expr_FuncCall' && count($subtree->name->parts) === 1) {
+
+				$func_name = $subtree->name->parts[0];
+				$args = array();
+				if (isset(\Core\Repository::$function_callback_into_variable[$func_name]))
+				{
+					$args = array_combine(\Core\Repository::$function_callback_into_variable[$func_name], $subtree->args);
+				}
+				elseif (isset(\Core\Repository::$function_callback_into_variable_infinity[$func_name])) {
+					$arg_pos = \Core\Repository::$function_callback_into_variable_infinity[$func_name];
+					$args = array_slice($subtree->args, $arg_pos - 1);
+				}
+
+				if ($this->compare_nodes($args, $iterator)) {
+					$this->set_error($subtree->getLine());
+				}
 			}
 		}
-
-		return $var;
 	}
 
-	/**
-	 * проверяет факт изменения переменной внутри кода
-	 * @param $body
-	 * @param $var_name
-	 * @return bool
-	 */
-	private function check_var_assets($body, $var_name)
+	protected function compare_nodes(array $nodes, $node)
 	{
-		$is_simple_eq = $this->check_equal($body, $var_name);
-		if ($is_simple_eq) {
-			return true;
-		}
+		foreach ($nodes as $var) {
 
-		$vars_by_ref = $this->variables_assets_by_procedure($body);
-		return in_array($var_name, $vars_by_ref);
-	}
+			if ($var->getType() === 'Arg') {
+				$var = $var->value;
+			}
 
-	/**
-	 * ищет $var = ...
-	 * @param $body
-	 * @param $var_name
-	 * @return bool
-	 */
-	private function check_equal($body, $var_name)
-	{
-		foreach ($body as $i => $token)
-		{
-			if (\Tokenizer::tokens_is_eq($token, array('T_VARIABLE', $var_name), true)
-				&& isset($body[$i+1])
-				&& $body[$i+1] === '='
-			) {
+			if (\Core\AST::compare_trees(array($var), array($node), true)) {
 				return true;
 			}
 		}
 
 		return false;
-	}
-
-	/**
-	 * переменные, которые получают значение от функций, будучи переданными как аргумент. пример: preg_match($regexp, $mime, $matches)
-	 * @param array
-	 * @return array
-	 */
-	private function variables_assets_by_procedure(array $_tokens)
-	{
-		$callback_into_variable = array();
-		foreach (\Repository::$function_callback_into_variable as $func_name => $arr_func_arg_pos) {
-			$__tokens = $_tokens;
-			while (true) {
-				$function_callback_into_variable_pos = \Tokenizer::token_ispos($__tokens, $func_name, 'T_STRING');
-				if ($function_callback_into_variable_pos === false) {
-					break;
-				}
-
-				$__tokens = array_slice($__tokens, $function_callback_into_variable_pos+1);
-
-				$expression = \Tokenizer::find_full_first_expression($__tokens,'(', ')', true);
-
-				unset($expression[0]); // первая скобка
-
-				foreach ($arr_func_arg_pos as $func_arg_pos) {
-					$var_name = $this->extract_need_arg($expression, $func_arg_pos);
-
-					if (!empty($var_name)) {
-						$callback_into_variable[] = $var_name;
-					}
-				}
-			}
-		}
-
-		foreach (\Repository::$function_callback_into_variable_infinity as $func_name => $func_arg_start_pos) {
-			$__tokens = $_tokens;
-			while (true) {
-				$function_callback_into_variable_pos = \Tokenizer::token_ispos($__tokens, $func_name, 'T_STRING');
-				if ($function_callback_into_variable_pos === false) {
-					break;
-				}
-
-				$__tokens = array_slice($__tokens, $function_callback_into_variable_pos+1);
-
-				$expression = \Tokenizer::find_full_first_expression($__tokens,'(', ')', true);
-
-				unset($expression[0]); // первая скобка
-
-				$_func_arg_start_pos = $func_arg_start_pos;
-				while (true) {
-					$var_name = $this->extract_need_arg($expression, $_func_arg_start_pos);
-
-					if (!empty($var_name)) {
-						$callback_into_variable[] = $var_name;
-						$_func_arg_start_pos++;
-					}
-					else {
-						break;
-					}
-				}
-			}
-		}
-
-		return array_unique($callback_into_variable);
-	}
-
-	/**
-	 * извлекает нужные аргумент из выражения
-	 * @param array
-	 * @param int
-	 * @return array
-	 */
-	private function extract_need_arg(array $tokens, $pos = 0)
-	{
-		$args = \Expressions::extract_all_args($tokens);
-		return isset($args[$pos-1]) ? str_replace(')', '', $args[$pos-1]) : '';
 	}
 }
