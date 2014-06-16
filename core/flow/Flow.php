@@ -11,7 +11,7 @@ use Core\Tokenizer;
 class Flow
 {
 	/**
-	 * ограничения переменных
+	 * переопределенные выше операнды (нужно когда между двумя if-ами один из операндов переопределяется)
 	 * @var array
 	 */
 	protected $scope = array();
@@ -31,7 +31,7 @@ class Flow
 
 	/**
 	 * можно пробросить предвычесленные ограничения переменных
-	 * можно пробросить истинные условия
+	 * можно пробросить переопределенные выше операнды
 	 * @param null | \PHPParser_Node[] $nodes
 	 * @param array $scope
 	 * @param array $conditions
@@ -95,7 +95,28 @@ class Flow
 	protected function generate_new_flow($condition, $stmts)
 	{
 		$cond = Tokenizer::parser('<?php ' . Solver::boolean_tree_optimize($condition) . ';');
+
 		$check = $this->check_conditions($cond[0]);
+
+		if ($check !== null) {
+			// проверяем не участвует ли в выражении какой либо операнд. который был переопределен выше
+			foreach ($this->scope as $asset_node) {
+				$is_break = false;
+				$found = \Core\AST::find_tree_by_root($cond, get_class($asset_node));
+				foreach ($found as $f_node) {
+					if (\Core\AST::compare_trees(array($f_node), array($asset_node))) {
+						$check = null;
+						$is_break = true;
+						break;
+					}
+				}
+
+				if ($is_break) {
+					break;
+				}
+			}
+		}
+
 		if ($check === null) {
 			$flow = new Flow($stmts, $this->scope, array_merge($this->conditions, $cond));
 			$this->errors = array_merge($this->errors, $flow->getErrors());
@@ -121,9 +142,8 @@ class Flow
 			}
 
 			$type = $tree->getType();
-			if ($type === 'Expr_Assign') {
-				// todo
-				//$this->scope[$tree->var->name] = $this->evaluate_expression($tree->expr);
+			if ($type === 'Expr_Assign' && !empty($this->conditions)) {
+				$this->scope[] = $tree->var;
 			}
 			elseif ($type == 'Stmt_If') {
 				// для каждой альтернативы просчитываем свой поток выполнения:
