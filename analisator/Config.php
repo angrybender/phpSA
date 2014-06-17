@@ -61,6 +61,8 @@ class Config {
 		return self::$instance[$child_class];
 	}
 
+	public static $cache_path = 'cache';
+
 	protected $config_path = '/../config.ini';
 
 	private $config;
