@@ -29,16 +29,8 @@ $worker->class_info = array(array(
 $hook = new \Hooks\IndexerClassInformation();
 $hook->run();
 
-class VarUndefined_mock extends \Checkers\VarUndefined {
-	public function __construct($source_code)
-	{
-
-	}
-}
-
 class Checker_VarUndefined extends CheckerSkeleton
 {
 	protected $base_path = 'data/checker_var_undefined/';
-	protected $mock_class_name = 'VarUndefined_mock';
-	protected $extractor = 'Procedure';
+	protected $class_name = 'VarUndefined';
 } 

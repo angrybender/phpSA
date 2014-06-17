@@ -5,7 +5,9 @@ namespace Core;
  * @author k.vagin
  */
 
-class Tokenizer {
+class Tokenizer
+{
+	protected static $file_cache = array();
 
 	/**
 	 * @param $php_text
@@ -15,6 +17,20 @@ class Tokenizer {
 	{
 		$parser = new \PHPParser_Parser(new \PHPParser_Lexer);
 		return $parser->parse($php_text);
+	}
+
+	public static function parse_file($file_name)
+	{
+		if (!isset(self::$file_cache[$file_name])) {
+			try {
+				self::$file_cache[$file_name] = self::parser(file_get_contents($file_name));
+			}
+			catch (\PHPParser_Error $e) {
+				self::$file_cache[$file_name] = $e;
+			}
+		}
+
+		return self::$file_cache[$file_name];
 	}
 
 	public static function printer($nodes)

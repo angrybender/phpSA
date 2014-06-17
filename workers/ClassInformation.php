@@ -1,6 +1,6 @@
 <?php
 /**
- * собирает методы и свойства каждого класса
+ * собирает публичные методы и свойства каждого класса
  * @author k.vagin
  */
 
@@ -14,100 +14,85 @@ class ClassInformation extends \Analisator\ParentWorker {
 	 */
 	public $class_info = array();
 
-	public function work($source_code)
+	public function work($file)
 	{
-		$tokens = \Tokenizer::get_tokens($source_code);
+		$tokens = \Core\Tokenizer::parse_file($file);
+		if ($tokens instanceof \Exception) {
+			return;
+		}
 
-		$e_obj = new \Extractors\Classes($tokens);
-		$classes = $e_obj->extract($tokens);
-		unset($e_obj);
+		$classes = \Core\AST::find_tree_by_root($tokens, array(
+			'PHPParser_Node_Stmt_Class',
+			'PHPParser_Node_Stmt_Interface',
+		));
 
 		foreach ($classes as $class) {
+
+			$methods_and_prop = \Core\AST::find_tree_by_root($class->stmts, array(
+				'PHPParser_Node_Stmt_ClassMethod',
+				'PHPParser_Node_Stmt_Property'
+			));
+
 			$this->class_info[] = array(
-				'name' => $class['name'],
-				'methods' => $this->extract_function_with_declarations($class['body']),
-				'properties' => $this->extract_properties($class['body'])
+				'name' => $class->name,
+				'methods' => $this->extract_class_methods_with_declarations($methods_and_prop),
+				'properties' => $this->extract_properties($methods_and_prop)
 			);
 		}
 	}
 
-	private function extract_function_with_declarations($class_body_tokens)
+	/**
+	 * @param \PHPParser_Node[] $class_body
+	 * @return array
+	 */
+	protected function extract_class_methods_with_declarations($class_body)
 	{
-		// нам нужно извлечь переданные переменные, поэтому стандартный извлекатель не подходит
-		// todo дублирование
 		$procedures = array();
-		foreach ($class_body_tokens as $i => $token) {
-			if (is_array($token)
-				&& $token[0] === 'T_FUNCTION'
-				&& isset($class_body_tokens[$i+1])
-				&& is_array($class_body_tokens[$i+1])
-				&& $class_body_tokens[$i+1][0] == 'T_STRING'
-			) {
-				$open_block_position = \Tokenizer::token_ispos(array_slice($class_body_tokens, $i), '{');
 
-				if ($open_block_position !== false) {
-					$function_declaration = array_slice($class_body_tokens, $i+2, $open_block_position-2);
-
-					$procedures[] = array(
-						'declaration' => $function_declaration,
-						'name' => $class_body_tokens[$i+1][1]
-					);
-				}
-			}
-		}
-
-		$class_body_tokens = null;
-
-		// переформатирование деклараций методов в структуру инфы о аргументах
-		foreach ($procedures as $j => $procedure) {
-			$args = $procedure['declaration'];
-			array_shift($args); // убираем обрамляющие скобки
-			array_pop($args);
-
-			$args_info = array();
-			foreach ($args as $i => $arg_var) {
-				if (is_array($arg_var)
-					&& $arg_var[0] === 'T_VARIABLE'
-					&& ($i>0)
-					&& $args[$i-1] === '&'
-				) {
-					$args_info[] = 'BY_LINK';
-					continue;
-				}
-
-				if (is_array($arg_var)
-					&& $arg_var[0] === 'T_VARIABLE'
-				) {
-					$args_info[] = 'BY_VAL';
-				}
+		foreach ($class_body as $method) {
+			if (!($method instanceof \PHPParser_Node_Stmt_ClassMethod)) {
+				continue;
 			}
 
-			unset($procedures[$j]['declaration']);
-			$procedures[$j]['args'] = $args_info;
+			if (!$method->isPublic()) {
+				continue;
+			}
+
+			$procedures[] = array(
+				'name' => $method->name,
+				'args' => array_map(function($value) {
+					if ($value->byRef) {
+						return 'BY_LINK';
+					}
+					else {
+						return 'BY_VAL';
+					}
+				}, $method->params)
+			);
 		}
 
 		return $procedures;
 	}
 
-	private function extract_properties($class_body_tokens)
+	/**
+	 * @param \PHPParser_Node[] $class_body
+	 * @return array
+	 */
+	protected function extract_properties($class_body)
 	{
-		$types = array(
-			'T_PRIVATE',
-			'T_PUBLIC',
-			'T_PROTECTED',
-			'T_STATIC'
-		);
-
 		$properties = array();
-		foreach ($class_body_tokens as $i => $token) {
-			if ($i == 0) continue;
 
-			if (is_array($token)
-				&& $token[0] === 'T_VARIABLE'
-				&& is_array($class_body_tokens[$i-1])
-				&& in_array($class_body_tokens[$i-1][0], $types)
-			) {
-				$properties[] = $token[1];
+		foreach ($class_body as $prop) {
+			if (!($prop instanceof \PHPParser_Node_Stmt_Property)) {
+				continue;
+			}
+
+			if (!$prop->isPublic()) {
+				continue;
+			}
+
+			foreach ($prop->props as $property) {
+				$properties[] = $property->name;
 			}
 		}
 

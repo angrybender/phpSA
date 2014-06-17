@@ -19,9 +19,9 @@ class ParentWorker {
 
 	/**
 	 * обработать очередной файл
-	 * @param $source_code
+	 * @param $file
 	 */
-	public function work($source_code)
+	public function work($file)
 	{}
 
 	public function __construct()

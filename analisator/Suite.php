@@ -1,7 +1,6 @@
 <?php
 /**
  *
- *  todo отключены воркеры и хуки
  * @author k.vagin
  */
 
@@ -181,15 +180,16 @@ class Suite {
 	/**
 	 * анализ файла
 	 * @param $file_path
+	 * @throws \Exception
 	 * @return int
 	 */
 	protected function run($file_path)
 	{
-		//file_put_contents('log.txt', $file_path.PHP_EOL, FILE_APPEND);
-
-		$code = file_get_contents($file_path);
 		try {
-			$tokens = \Core\Tokenizer::parser($code);
+			$tokens = \Core\Tokenizer::parse_file($file_path);
+			if ($tokens instanceof \Exception) {
+				throw $tokens;
+			}
 		}
 		catch (\PHPParser_Error $e) {
 			if ($this->config->syntax_error['print']) {
@@ -235,17 +235,13 @@ class Suite {
 	 */
 	protected function pre_run($file_path)
 	{
-		//file_put_contents('log.txt', $file_path.PHP_EOL, FILE_APPEND);
-
-		$code = file_get_contents($file_path);
-
 		try {
 			foreach ($this->workers as $worker) {
-				$worker->work($code);
+				$worker->work($file_path);
 			}
 		}
 		catch (\Exception $e) {
-			die('Worker error: ' . $e->getMessage(). ", file: " . $file_path); // todo maybe exception
+			die('Worker error: ' . $e->getMessage(). ", file: " . $file_path . PHP_EOL); // todo maybe exception
 		}
 	}
 
@@ -305,14 +301,14 @@ class Suite {
 	protected function project_files_iterator()
 	{
 		// воркеры и тд
-		/*echo "Start workers...", PHP_EOL;
+		echo "Start workers...", PHP_EOL;
 		foreach ($this->project_files as $file) {
 			$this->pre_run($file['path']);
-		}*/
+		}
 
 		// хуки
-		//echo "Start hooks...", PHP_EOL;
-		//$this->run_hooks();
+		echo "Start hooks...", PHP_EOL;
+		$this->run_hooks();
 
 		error_reporting(E_ERROR);
 
