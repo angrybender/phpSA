@@ -19,6 +19,10 @@ class Tokenizer
 		return $parser->parse($php_text);
 	}
 
+	/**
+	 * @param $file_name
+	 * @return \PHPParser_Node[]
+	 */
 	public static function parse_file($file_name)
 	{
 		if (!isset(self::$file_cache[$file_name])) {

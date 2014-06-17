@@ -23,8 +23,9 @@ include 'core/Repository.php';
 include 'core/Tokenizer.php';
 include 'core/AST.php';
 
+include 'core/flow/VarTypes.php';
 include 'core/flow/FlowIf.php';
-include 'core/flow/VarLimits.php';
+include 'core/flow/FlowVar.php';
 include 'core/flow/Solver.php';
 include 'core/flow/ExprFalse.php';
 include 'core/flow/ExprTrue.php';

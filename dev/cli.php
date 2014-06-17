@@ -1,6 +1,7 @@
 <?php
 /**
  * пример: php dev/cli.php --generator checker --name BothArgumentsIdentical
+ * пример: php dev/cli.php --generator standards
  * @author k.vagin
  */
 

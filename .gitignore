@@ -4,6 +4,7 @@ tests/log.txt
 tests/results.txt
 tests/results.bin
 tests/lock.lock
+cache
 poligon.php
 log.txt
 *.ini
