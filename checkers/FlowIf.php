@@ -22,7 +22,7 @@ class FlowIf extends \Analisator\ParentChecker
 		}
 
 		foreach ($blocks as $unit) {
-			$flow = new \Core\Flow\Flow($unit);
+			$flow = new \Core\Flow\FlowIf($unit);
 			$errors = $flow->getErrors();
 			$errors = array_map(function($value) {
 				$value['message'] = "Выражение {$value['message'][1]} входит в противоречие с выражением {$value['message'][0]}";

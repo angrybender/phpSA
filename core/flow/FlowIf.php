@@ -8,7 +8,7 @@ use Core\Tokenizer;
  */
 
 
-class Flow
+class FlowIf
 {
 	/**
 	 * переопределенные выше операнды (нужно когда между двумя if-ами один из операндов переопределяется)
@@ -118,7 +118,7 @@ class Flow
 		}
 
 		if ($check === null) {
-			$flow = new Flow($stmts, $this->scope, array_merge($this->conditions, $cond));
+			$flow = new FlowIf($stmts, $this->scope, array_merge($this->conditions, $cond));
 			$this->errors = array_merge($this->errors, $flow->getErrors());
 		}
 		else {
