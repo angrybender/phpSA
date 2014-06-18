@@ -58,6 +58,7 @@ class Suite {
 			'checkers/',
 			'workers/',
 			'hooks/',
+			'init/',
 		);
 
 		foreach ($paths as $path) {
@@ -68,7 +69,7 @@ class Suite {
 	/**
 	 * обработка конфига
 	 */
-	private function load_config()
+	protected function load_config()
 	{
 		$this->config = Config::getInstance();
 		$this->config->load();
@@ -160,6 +161,21 @@ class Suite {
 		foreach ($classes as $class) {
 			if (is_subclass_of($class, "Analisator\\ParentWorker")) {
 				$this->workers[] = new $class;
+			}
+		}
+	}
+
+	/**
+	 * запускает все доступные инициализаторы
+	 */
+	protected function collect_init()
+	{
+		echo 'Init...', PHP_EOL;
+
+		$classes = get_declared_classes();
+		foreach ($classes as $class) {
+			if (is_subclass_of($class, "Analisator\\ParentInit")) {
+				new $class;
 			}
 		}
 	}
@@ -330,6 +346,7 @@ class Suite {
 		$this->collect_checkers();
 		$this->collect_workers();
 		$this->collect_hooks();
+		$this->collect_init();
 
 		$this->project_files_iterator();
 

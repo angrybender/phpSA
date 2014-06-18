@@ -79,4 +79,4 @@ foreach ($files as $file) {
 }
 echo PHP_EOL;
 
-file_put_contents(__DIR__ . '/../../cache/php_standards_functions.txt', serialize($all_functions));
+file_put_contents(__DIR__ . '/../../' . \Analisator\Config::$cache_path . '/php_standards_functions.txt', serialize($all_functions));
