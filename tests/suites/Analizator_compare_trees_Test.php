@@ -14,7 +14,7 @@ class Analizator_compare_trees extends PHPUnit_Framework_TestCase
 	{
 		$a = \Core\Tokenizer::parser(file_get_contents($a));
 		$b = \Core\Tokenizer::parser(file_get_contents($b));
-		$this->assertEquals(\Core\AST::compare_trees($a, $b), true);
+		$this->assertEquals(true, \Core\AST::compare_trees($a, $b));
 	}
 
 	public function provider_identical()
