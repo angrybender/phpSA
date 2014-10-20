@@ -47,22 +47,6 @@ class FlowIf
 	}
 
 	/**
-	 * оценивает выражение, основываясь на информации из скоупа
-	 * @param \PHPParser_Node $expression
-	 * @return false | \Core\Flow\VarLimits
-	 */
-	public function evaluate_expression($expression)
-	{
-		if ($expression instanceof \PHPParser_Node_Scalar) {
-			$value = new VarLimits();
-			$value->addAndEqual($expression->value);
-			return $value;
-		}
-
-		return false; // undef
-	}
-
-	/**
 	 * проверяет на взаимную не противоречивость выржения в проперти conditions и переданное выражение
 	 * @param \PHPParser_Node $tree
 	 * @throws \Exception
