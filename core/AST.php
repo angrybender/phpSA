@@ -175,7 +175,11 @@ class AST
 	public static function tree_sort(\PHPParser_Node $tree)
 	{
 		$tree = clone $tree;
-		$tree->unsetAttributes(); // удаляем аттрибуты перед сравнением
+
+		$attributes = $tree->getAttributes();
+		foreach ($attributes as $name => $v) {
+			$tree->setAttribute($name, array());
+		}
 
 		if (in_array($tree->getType(), \Core\Repository::$commutative_operators_Node_type)) {
 			while (true) {
