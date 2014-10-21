@@ -50,19 +50,32 @@ class BothArgumentsIdentical extends \Analisator\ParentChecker
 		$found = \Core\AST::find_tree_by_root($nodes, $nodes_type);
 
 		foreach ($found as $tree) {
+			$tree = \Core\AST::tree_sort($tree);
+
 			$operand_nodes_name = $this->operators[get_class($tree)];
 			if ($operand_nodes_name === null) {
 				$operand_nodes_name = array('left', 'right');
 			}
 
-			$this->operator_check($tree->{$operand_nodes_name[0]}, $tree->{$operand_nodes_name[1]}, $tree->getLine());
+			$this->operator_check($tree->{$operand_nodes_name[0]}, $tree->{$operand_nodes_name[1]}, $tree);
 		}
 	}
 
-	protected function operator_check($tree_a, $tree_b, $line)
+	protected function operator_check($tree_a, $tree_b, \PHPParser_Node $parent)
 	{
+		$line = $parent->getLine();
 		if (\Core\AST::compare_trees(array($tree_a), array($tree_b))) {
 			$this->set_error($line);
+		}
+
+		if ($tree_a instanceof \PHPParser_Node && $tree_b instanceof \PHPParser_Node) {
+
+			// проверяем случай $a && $a && $b, $a && $c && $b && $a и тд
+			$parent_type = $parent->getType();
+
+			if ($tree_a->getType() === $parent_type && in_array($parent_type, \Core\Repository::$commutative_operators_Node_type)) {
+				$this->operator_check($tree_a->left, $tree_a->right, $tree_a);
+			}
 		}
 	}
 }
