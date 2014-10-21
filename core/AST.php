@@ -88,7 +88,6 @@ class AST
 
 	/**
 	 * сравнивает 2 дерева с учетом порядка агрументов коммутативных операторов
-	 * NB. не понимает много подряд идущих операторов, вида $a && $b && $c, в силу того, что операнды оказываются в разных поддеревьях
 	 * @param \PHPParser_Node|\PHPParser_Node[] $tree_a
 	 * @param $tree_b
 	 * @param bool $strict
@@ -103,6 +102,11 @@ class AST
 			}
 			/** @var \PHPParser_Node $node_b */
 			$node_b = $tree_b[$i];
+
+			if (!$strict) {
+				$node_a = ($node_a instanceof \PHPParser_Node) ? self::tree_sort($node_a) : $node_a;
+				$node_b = ($node_b instanceof \PHPParser_Node) ? self::tree_sort($node_b) : $node_b;
+			}
 
 			if (is_scalar($node_a)) {
 				if (!is_scalar($node_b) || $node_b != $node_a) {
@@ -156,18 +160,203 @@ class AST
 				}
 			}
 
-			// сравнение с учетом коммутативности операторов, в случае если прямое сравнение провалилось
-			if (!$strict && !$identical && in_array($type, \Core\Repository::$commutative_operators_Node_type)) {
-				$identical = self::compare_trees(array($node_a->right), array($node_b->left));
-				$identical = $identical && self::compare_trees(array($node_a->left), array($node_b->right));
-			}
-
 			if (!$identical) {
 				return false;
 			}
 		}
 
 		return true;
+	}
+
+	/**
+	 * @param \PHPParser_Node $tree
+	 * @return \PHPParser_Node
+	 */
+	public static function tree_sort(\PHPParser_Node $tree)
+	{
+		$tree = clone $tree;
+		$tree->unsetAttributes(); // удаляем аттрибуты перед сравнением
+
+		if (in_array($tree->getType(), \Core\Repository::$commutative_operators_Node_type)) {
+			while (true) {
+				$left = self::tree_sort($tree->left);
+				$right = self::tree_sort($tree->right);
+
+				$sorted_tree = self::subtree_sort($left, $right, $tree);
+
+				if (Tokenizer::printer($tree) === Tokenizer::printer($sorted_tree)) {
+					// если очередная итерация сортировки не вызывала перемещение узлов дерева, выход
+					break;
+				}
+
+				$tree = $sorted_tree;
+			}
+
+			return $tree;
+		}
+		else {
+			$sub_nodes = $tree->getSubNodeNames();
+			foreach ($sub_nodes as $node) {
+				if ($tree->{$node} instanceof \PHPParser_Node) {
+					$tree->{$node} = self::tree_sort($tree->{$node});
+				}
+				elseif (is_array($tree->{$node})) {
+					foreach ($tree->{$node} as $i => $sub_node) {
+						if ($sub_node instanceof \PHPParser_Node) $tree->{$node}[$i] = self::tree_sort($sub_node);
+					}
+				}
+			}
+		}
+
+		return $tree;
+	}
+
+	/**
+	 * сортировка с анализом в глубину по 1 поддерево
+	 * левое и правое поддерево уже отсортировано
+	 * @param \PHPParser_Node $left
+	 * @param \PHPParser_Node $right
+	 * @param \PHPParser_Node $parent
+	 */
+	protected static function subtree_sort(\PHPParser_Node $left, \PHPParser_Node $right, \PHPParser_Node $parent)
+	{
+		$parent_type = $parent->getType();
+		$parent_class = get_class($parent);
+
+		$left_type = $left->getType();
+		$right_type = $right->getType();
+
+		$right_code = Tokenizer::printer($right);
+		$left_code = Tokenizer::printer($left);
+
+		$left_right = array($left, $right);
+
+		if ($left_type === $parent_type) {
+			$left_left_code = Tokenizer::printer($left->left);
+			$left_right_code = Tokenizer::printer($left->right);
+
+			if ($right_code < $left_left_code) {
+				// меняем правое поддерево на левое поддерево левого поддерева
+				$left_right = self::swipe_nodes($left, $right, 'left', null);
+			}
+			elseif ($right_code < $left_right_code) {
+				$left_right = self::swipe_nodes($left, $right, 'right', null);
+			}
+		}
+
+		if ($right_type === $parent_type) {
+			$right_left_code = Tokenizer::printer($right->left);
+			$right_right_code = Tokenizer::printer($right->right);
+
+			if ($left_code < $right_left_code) {
+				$left_right = self::swipe_nodes($left, $right, null, 'left');
+			}
+			elseif ($left_code < $right_right_code) {
+				$left_right = self::swipe_nodes($left, $right, null, 'right');
+			}
+		}
+
+		if ($left_code > $right_code) {
+			$left_right = array($right, $left);
+		}
+
+		return new $parent_class($left_right[0], $left_right[1]);
+	}
+
+	/**
+	 * меняет местами ноды в деревьях
+	 * @param \PHPParser_Node $destination
+	 * @param \PHPParser_Node $source
+	 * @param string $destination_position
+	 * @param string $source_position left|right|null
+	 * @return \PHPParser_Node[] array($destination, $source)
+	 */
+	public static function swipe_nodes(\PHPParser_Node $destination, \PHPParser_Node $source, $destination_position = 'left', $source_position = 'left')
+	{
+		if ($source_position === null && $destination_position === null) {
+			return array(clone $source, clone $destination);
+		}
+
+		$source_right = null;
+		$destination_right = null;
+		if ($source_position === 'left' && $destination_position === 'left') {
+			$destination_left = clone $source->left;
+			$destination_right  = clone $destination->right;
+
+			$source_left = clone $destination->left;
+			$source_right = clone $source->right;
+		}
+
+		if ($source_position === 'left' && $destination_position === 'right') {
+			$destination_left = clone $destination->left;
+			$destination_right = clone $source->left;
+
+			$source_left = clone $destination->right;
+			$source_right = clone $source->right;
+		}
+
+		if ($source_position === 'right' && $destination_position === 'right') {
+			$destination_left = clone $destination->left;
+			$destination_right = clone $source->right;
+
+			$source_left = clone $source->left;
+			$source_right = clone $destination->right;
+		}
+
+		if ($source_position === 'right' && $destination_position === 'left') {
+			$destination_left = clone $source->right;
+			$destination_right  = clone $destination->right;
+
+			$source_left = clone $source->left;
+			$source_right = clone $destination->left;
+		}
+
+		if ($source_position === null && $destination_position === 'left') {
+			$destination_left = clone $source;
+			$destination_right  = clone $destination->right;
+
+			$source_left = clone $destination->left;
+		}
+
+		if ($source_position === null && $destination_position === 'right') {
+			$destination_left = clone $destination->left;
+			$destination_right = clone $source;
+
+			$source_left = clone $destination->right;
+		}
+
+		if ($source_position === 'left' && $destination_position === null) {
+			$destination_left = clone $source->left;
+
+			$source_left = clone $destination;
+			$source_right = clone $source->right;
+		}
+
+		if ($source_position === 'right' && $destination_position === null) {
+			$destination_left = clone $source->right;
+
+			$source_left = clone $source->left;
+			$source_right = clone $destination;
+		}
+
+		$source_class = get_class($source);
+		$destination_class = get_class($destination);
+
+		if ($source_right !== null) {
+			$source = new $source_class($source_left, $source_right);
+		}
+		else {
+			$source = $source_left;
+		}
+
+		if ($destination_right !== null) {
+			$destination = new $destination_class($destination_left, $destination_right);
+		}
+		else {
+			$destination = $destination_left;
+		}
+
+		return array($destination, $source);
 	}
 
 	/**
