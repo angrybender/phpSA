@@ -386,4 +386,72 @@ class AST
 
 		return $result;
 	}
-} 
+
+	/**
+	 * рекурсивно обходит все дерево,
+	 * результат работы $fn записывается в текущий узел
+	 * в $fn передается текущий узел (подузел и тд) и его родитель
+	 * (ручное тестирование)
+	 * @param $tree
+	 * @param $fn
+	 * @return array
+	 */
+	public static function walk($tree, $fn)
+	{
+		if (is_object($tree)) {
+
+			$sub_nodes = $tree->getSubNodeNames();
+			foreach ($sub_nodes as $sub_node_name) {
+
+				if (is_scalar($tree->{$sub_node_name})) {
+					continue;
+				}
+
+				if (!is_array($tree->{$sub_node_name})) {
+					$tree->{$sub_node_name} = $fn($tree->{$sub_node_name}, $tree);
+				}
+
+				self::walk($tree->{$sub_node_name}, $fn);
+			}
+		}
+		elseif (is_array($tree)) {
+
+			foreach ($tree as $i => $node) {
+
+				if (is_scalar($node)) {
+					continue;
+				}
+
+				$tree[$i] = $fn($node, $tree);
+
+				if (is_object($tree[$i])) {
+					self::walk($tree[$i], $fn);
+				}
+			}
+
+			$tree = array_filter($tree);
+		}
+
+		return $tree;
+	}
+
+	/**
+	 * полукостыльная функция - удаляет определенное поддерево, ориентируясь на метку в аттрибуте PHPDoc
+	 * (ручное тестирование)
+	 * @param $nodes
+	 * @return array
+	 */
+	public static function remove_subtree($nodes)
+	{
+		$nodes = self::walk($nodes, function($node) {
+			/** @var \PHPParser_Node $node  */
+			if ($node->getAttribute('removed') === true) {
+				$node = null;
+			}
+
+			return $node;
+		});
+
+		return $nodes;
+	}
+}
