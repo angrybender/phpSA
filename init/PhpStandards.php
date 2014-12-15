@@ -20,6 +20,20 @@ class PhpStandards extends \Analisator\ParentInit
 	{
 		foreach ($data as $function_name => $function_prototype) {
 
+			// заполняем прототипы всех функций:
+			$types = array();
+			foreach ($function_prototype['ret'] as $i => $type) {
+				$type = \Core\Repository::$cached_type__to_system_type[$type];
+
+				foreach ($type as $mix_type) {
+					$types[$mix_type[0] . '_' . $mix_type[1]] = array( // собираем только уникальные записи о типах
+						'class' => $mix_type[0],
+						'type'	=> $mix_type[1]
+					);
+				}
+			}
+			\Core\Repository::$functions_prototypes[$function_name]['ret'] = array_values($types);
+
 			// только для тех, кто принимает аргументы по ссылке
 			if (!$this->is_have_byref_args($function_prototype)) {
 				continue;
@@ -55,4 +69,4 @@ class PhpStandards extends \Analisator\ParentInit
 			}
 		}
 	}
-} 
+}

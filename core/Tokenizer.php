@@ -53,6 +53,18 @@ class Tokenizer
 		}
 	}
 
+	public static function cleanPrinter($nodes)
+	{
+		$nodes = clone $nodes;
+		$nodes->setAttribute('comments', array());
+		$nodes = AST::walk($nodes, function($node) {
+			$node->setAttribute('comments', array());
+			return $node;
+		});
+
+		return self::printer($nodes);
+	}
+
 	/**
 	 * присваивает каждой ноде id
 	 * @param \PHPParser_Node[]| \PHPParser_Node $nodes

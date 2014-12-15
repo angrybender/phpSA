@@ -1,6 +1,5 @@
 <?php
 /**
- * todo autoloader
  * @author k.vagin
  */
 
@@ -32,11 +31,13 @@ include 'core/flow/ExprFalse.php';
 include 'core/flow/ExprTrue.php';
 include 'core/flow/ExprEq.php';
 
+include 'core/flow/procedure/ReturnType.php';
+
 spl_autoload_register(function($class)
 {
 	$ar_name = explode('\\',$class);
 
-	if (count($ar_name) !== 2) return true;
+	if (count($ar_name) < 2) return true;
 
 	// дозагрузка чекеров, срабатывает когда один чекер наследуется от другого
 	if ($ar_name[0] === 'Checkers') {
@@ -46,5 +47,12 @@ spl_autoload_register(function($class)
 	// загрузка извлекателей
 	if ($ar_name[0] === 'Extractors') {
 		include_once 'extractors/' . $ar_name[1] . '.php';
+	}
+
+	// "трассировка кода"
+	if (count($ar_name) > 3 && $ar_name[0] === 'Core' && $ar_name[1] === 'Flow' && $ar_name[2] === 'Trace') {
+		$class_name = array_pop($ar_name);
+		$path = strtolower(join(DIRECTORY_SEPARATOR, $ar_name)) . DIRECTORY_SEPARATOR . $class_name . '.php';
+		include_once $path;
 	}
 });

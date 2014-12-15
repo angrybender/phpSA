@@ -7,4 +7,4 @@ tests/lock.lock
 cache
 poligon.php
 log.txt
-*.ini
+config.ini

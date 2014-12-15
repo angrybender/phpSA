@@ -6,6 +6,8 @@
 namespace Core\Flow;
 
 
+use Core\Repository;
+
 class Solver
 {
 	// исключения для self::boolean_tree_optimize
@@ -157,7 +159,7 @@ class Solver
 
 			return true;
 		}
-
+		
 		if (empty($expr_type) && $type !== 'Expr_BooleanNot') {
 			return self::estimate_on_boolean_collision($tree, $type, $variable, $tree);
 		}

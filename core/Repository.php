@@ -126,4 +126,80 @@ class Repository
 		'Expr_Equal'			=> 'Expr_NotEqual',
 		'Expr_Identical'		=> 'Expr_NotIdentical',
 	);
+
+	/**
+	 * операторы - тип данных
+	 */
+	public static $operators_result_type = array(
+		// затирается преобразованными значениями из /third_party/php_standards/operators_and_types.ini
+	);
+
+	/**
+	 * сопоставляет зашифрованные в кеше встроенных в пхп функций типы значений во внутренние типы проекта
+	 * @var array
+	 */
+	/*public static $cached_type__to_system_type = array(
+		'M'	=> array(
+			array(
+				\Core\Flow\VarTypes::CLASS_MIX,
+				\Core\Flow\VarTypes::TYPE_MIX,
+			)
+		),
+
+		'I'	=> array(
+			array(
+				\Core\Flow\VarTypes::CLASS_SCALAR,
+				\Core\Flow\VarTypes::TYPE_INT,
+			)
+		),
+
+		'F' => array(
+			array(
+				\Core\Flow\VarTypes::CLASS_SCALAR,
+				\Core\Flow\VarTypes::TYPE_FLOAT,
+			)
+		),
+
+		'S' => array(
+			array(
+				\Core\Flow\VarTypes::CLASS_SCALAR,
+				\Core\Flow\VarTypes::TYPE_STRING,
+			)
+		),
+
+		'B' => array(
+			array(
+				\Core\Flow\VarTypes::CLASS_SCALAR,
+				\Core\Flow\VarTypes::TYPE_BOOLEAN,
+			)
+		),
+
+		'V' => array(
+			array(
+				\Core\Flow\VarTypes::CLASS_VOID,
+				\Core\Flow\VarTypes::TYPE_MIX,
+			)
+		),
+
+		'I' => array(
+			array(
+				\Core\Flow\VarTypes::CLASS_SCALAR,
+				\Core\Flow\VarTypes::TYPE_INT,
+			)
+		),
+
+		'A' => array(
+			array(
+				\Core\Flow\VarTypes::CLASS_VECTOR,
+				\Core\Flow\VarTypes::TYPE_MIX,
+			)
+		),
+
+		'R' => array(
+			array(
+				\Core\Flow\VarTypes::CLASS_SCALAR,
+				\Core\Flow\VarTypes::TYPE_RES,
+			)
+		),
+	);*/
 }
